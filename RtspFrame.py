@@ -144,10 +144,10 @@ class VideoCaptureDaemon(threading.Thread):
                     else:
                         #print("@"+str(x)+"x"+str(y))
                         if(World.gMatrix[x,y, L.sex] == T.male):
-                            b = 200-World.gMatrix[x,y, L.age]
+                            b = 250-World.gMatrix[x,y, L.age]*2
                         else:
-                            r = 200-World.gMatrix[x,y, L.age]
-                        g = 100 + World.gMatrix[x,y, L.energy]
+                            r = 250-World.gMatrix[x,y, L.age]*2
+                        g = 50 + int(World.gMatrix[x,y, L.energy]*1.5)
                 
                 #if(self.mode > L.age):
                 else:
@@ -160,7 +160,7 @@ class VideoCaptureDaemon(threading.Thread):
                             v = World.gMatrix[x,y, self.mode]
                         '''
 
-                        v = World.gMatrix[x,y, self.mode]
+                        v = World.gMatrix[x,y, self.mode]*2
                         if(World.gMatrix[x,y, L.sex] == T.male):
                             b = 50+v
                         else:

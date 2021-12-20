@@ -51,6 +51,9 @@ gChildAge = 10
 gBirthEnergy = 4
 gMaxNeibghors = 6
 gAllowLocalRes = False
+gIQ0 = True
+gMutationRate = 1
+gMutationFactor = 3
 
 gEpoch=0
 gPersons=0
@@ -60,28 +63,55 @@ bStop = False
 
 def CrossGenes(xm, ym, xf, yf, layer):
     global gMatrix
+    global gMutationRate, gMutationFactor
+
     a = gMatrix[xm, ym, layer]
     b = gMatrix[xf, yf, layer]
+    r = random.randint(0,1)
+    if(r == T.male):
+        r = a
+    else:
+        r = b
+
+    m = random.randint(0,99)
+    if(m < gMutationRate):
+        v0 = min(a, b)
+        v1 = max(a, b)
+        r = random.randint(int(v0-v0/gMutationFactor-1), int(v1+(100-v1)/gMutationFactor+1))
+        r = max(0, r)
+        r = min(r, 100)
+
+    '''
     v0 = min(a, b)
     v1 = max(a, b)
     r = random.randint(v0-1,v1+1)
     r = max(0, r)
     r = min(r, 100)
-    return r
+    '''
+    return int(r)
+#end CrossGenes
 
 def CreatePerson(x, y):
     global gMatrix, gPersons, gPersonsTotal
+    global gIQ0
     gMatrix[x, y, L.ctype ] = T.person
     gMatrix[x, y, L.energy] = random.randint(20,50)
     gMatrix[x, y, L.age   ] = 16
     gMatrix[x, y, L.sex   ] = random.randint(0,1)
     gMatrix[x, y, L.exp   ] = 0
 
-    gMatrix[x, y, L.share     ] = random.randint(0,10)
-    gMatrix[x, y, L.aggressive] = random.randint(0,100)
-    gMatrix[x, y, L.iq        ] = random.randint(0,100)
-    gMatrix[x, y, L.defence   ] = random.randint(0,100)
-    gMatrix[x, y, L.mobility  ] = random.randint(0,100)
+    if(gIQ0):
+        gMatrix[x, y, L.share     ] = 0
+        gMatrix[x, y, L.aggressive] = 0
+        gMatrix[x, y, L.iq        ] = 0
+        gMatrix[x, y, L.defence   ] = 0
+        gMatrix[x, y, L.mobility  ] = 0
+    else:
+        gMatrix[x, y, L.share     ] = random.randint(0,10)
+        gMatrix[x, y, L.aggressive] = random.randint(0,100)
+        gMatrix[x, y, L.iq        ] = random.randint(0,100)
+        gMatrix[x, y, L.defence   ] = random.randint(0,100)
+        gMatrix[x, y, L.mobility  ] = random.randint(0,100)
     gMatrix[x, y, L.fert      ] = random.randint(0,100)
 
     gPersons += 1
@@ -90,6 +120,7 @@ def CreatePerson(x, y):
 
 def CreateChild(x, y, xm, ym, xf, yf):
     global gMatrix, gBirthEnergy, gPersons, gPersonsTotal
+
     gMatrix[x, y, L.ctype ] = T.person
     #gMatrix[x, y, L.energy] = random.randint(10,20)
     gMatrix[x, y, L.energy] = random.randint(1,gBirthEnergy)
@@ -97,10 +128,22 @@ def CreateChild(x, y, xm, ym, xf, yf):
     gMatrix[x, y, L.sex   ] = random.randint(0,1)
 
     if(gMatrix[xf, yf, L.energy] < gBirthEnergy):
-        gMatrix[xf, yf, L.energy] = 0
+        de = gMatrix[xf, yf, L.energy]
+    else:
+        de = gBirthEnergy
+
+    gMatrix[x, y, L.energy] = random.randint(1,de)
+    gMatrix[xf, yf, L.energy] -= int(de)
+
+    de = (gBirthEnergy * gMatrix[xm, ym, L.share]) / 200
+    if(gMatrix[xm, ym, L.energy] < de):
+        de = gMatrix[xm, ym, L.energy]/2
+
+    gMatrix[xm, ym, L.energy] -= int(de)
+    gMatrix[xf, yf, L.energy] += int(de)
 
     for layer in range(L.genes, L.layers):
-        gMatrix[x, y, L.share     ] = CrossGenes(xm, ym, xf, yf, layer)
+        gMatrix[x, y, layer     ] = CrossGenes(xm, ym, xf, yf, layer)
 
     exp = (0 + gMatrix[xf, yf, L.exp] + gMatrix[xm, ym, L.exp]) * gMatrix[x, y, L.iq] / 200
     if(exp > 100):
@@ -155,6 +198,7 @@ def FetchResources(x, y):
     if(gMatrix[x,y, L.energy] > 250):
         return
 
+    age = gMatrix[x,y, L.age]
     iq = gMatrix[x,y, L.iq]
     exp = gMatrix[x,y, L.exp]
     r = random.randint(0,100)
@@ -166,10 +210,6 @@ def FetchResources(x, y):
             gMatrix[x,y, L.exp] += 1
     #end if()
 
-    d = 2+int(gMatrix[x,y, L.mobility]*2/100)
-    ox = random.randint(0,d)
-    oy = random.randint(0,d)
-
     if(gAllowLocalRes):
         # unconditionally get local resorces if any
         if(gMatrix[x,y, L.resources] > 0):
@@ -177,21 +217,35 @@ def FetchResources(x, y):
             gMatrix[x,y, L.resources] -= 1
     #end if(gAllowLocalRes)
 
-    D = int(d/2)
-    X = x+ox-D
-    Y = y+oy-D
+    X=x
+    Y=y
+    n=9
 
-    if(X==x and Y==y):
-        return
+    while(X==x and Y==y and n>0):
+        d = 2+int(gMatrix[x,y, L.mobility]*2/100)
+        ox = random.randint(0,d)
+        oy = random.randint(0,d)
+
+        D = int(d/2)
+        X = x+ox-D
+        Y = y+oy-D
+
+        if(age < gChildAge):
+            if(gMatrix[X,Y, L.ctype] == T.ground):
+                X=x
+                Y=y
+        n -= 1
+    #end while()
 
     if(X>=0 and X<gW and Y>=0 and Y<gH):
         if(gMatrix[X,Y, L.ctype] == T.ground):
 
+            '''
             IQ = random.randint(0,100)
             if(iq+exp < IQ):
                 return
-
-            dr = int(iq*gMaxIQres/100)
+            '''
+            dr = int((iq+exp)*gMaxIQres/100+1)
             dr = min(gMatrix[X,Y, L.resources], dr)
 
             if(gMatrix[X,Y, L.resources] >= 1):
@@ -199,17 +253,17 @@ def FetchResources(x, y):
                 gMatrix[x,y, L.energy] += dr
         else:
             SHARE = random.randint(0,100)
-            if(gMatrix[X,Y, L.share] > SHARE):
+            if(gMatrix[X,Y, L.share] > SHARE or age < gChildAge):
                 gMatrix[X,Y, L.energy] -= 1
                 gMatrix[x,y, L.energy] += 1
 #                return
 
             AGGR = random.randint(0,100)
-            if(gMatrix[x,y, L.aggressive] < AGGR):
+            if(gMatrix[x,y, L.aggressive] * (1 + iq/10) < AGGR):
                 return
 
             DEF = random.randint(0,100)
-            if(gMatrix[X,Y, L.defence] < DEF):
+            if(gMatrix[X,Y, L.defence] * (1 + iq/10)  < DEF):
                 gMatrix[X,Y, L.energy] -= 1
                 gMatrix[x,y, L.energy] += 1
                 return
@@ -368,11 +422,11 @@ def MakeChildren(x, y):
 
     if(gMatrix[x,y, L.ctype] == T.ground):
         return
-    if(gMatrix[x,y, L.energy] < gBirthEnergy):
+    if(gMatrix[x,y, L.energy] <= gBirthEnergy):
         return
     if(gMatrix[x,y, L.sex] == T.male):
         return
-    if(gMatrix[x,y, L.age] < gChildAge):
+    if(gMatrix[x,y, L.age] < gChildAge + gMatrix[x,y, L.iq]/25):
         return
 
     sz = 1
@@ -396,7 +450,7 @@ def MakeChildren(x, y):
                 continue
             if(gMatrix[xi,yi, L.sex] == T.female):
                 continue
-            if(gMatrix[xi,yi, L.age] < gAttChildSz):
+            if(gMatrix[xi,yi, L.age] < gAttChildSz + gMatrix[x,y, L.iq]/25):
                 continue
 
             fert = 1 * gMatrix[x, y, L.fert] * gMatrix[xi, yi, L.fert]
@@ -412,7 +466,8 @@ def MakeChildren(x, y):
     if(xt == -1 or X == -1):
         return
 
-    CreateChild(xt, yt, xi, yi, X, Y)
+    # target, male, female
+    CreateChild(xt, yt, X, Y, x, y)
 #end MakeChildren()
 
 def Next():
