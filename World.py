@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import pickle
+import time
 
 class Empty:
     pass        
@@ -123,7 +124,7 @@ def CreateChild(x, y, xm, ym, xf, yf):
 
     gMatrix[x, y, L.ctype ] = T.person
     #gMatrix[x, y, L.energy] = random.randint(10,20)
-    gMatrix[x, y, L.energy] = random.randint(1,gBirthEnergy)
+    #gMatrix[x, y, L.energy] = random.randint(1,gBirthEnergy)
     gMatrix[x, y, L.age   ] = 0
     gMatrix[x, y, L.sex   ] = random.randint(0,1)
 
@@ -219,7 +220,9 @@ def FetchResources(x, y):
 
     X=x
     Y=y
-    n=9
+
+    '''
+    n=1
 
     while(X==x and Y==y and n>0):
         d = 2+int(gMatrix[x,y, L.mobility]*2/100)
@@ -230,12 +233,34 @@ def FetchResources(x, y):
         X = x+ox-D
         Y = y+oy-D
 
+        if(X<0 or X>=gW or Y<0 or Y>=gW):
+            n -= 1
+            continue
+
         if(age < gChildAge):
             if(gMatrix[X,Y, L.ctype] == T.ground):
+                # children looks for adult
                 X=x
                 Y=y
+        else:
+            break
+
         n -= 1
     #end while()
+    '''
+
+    d = 2+int(gMatrix[x,y, L.mobility]*2/100)
+    ox = random.randint(0,d)
+    oy = random.randint(0,d)
+
+    D = int(d/2)
+    X = x+ox-D
+    Y = y+oy-D
+
+    if(X==x and Y==y):
+        return
+    if(X<0 or X>=gW or Y<0 or Y>=gW):
+        return
 
     if(X>=0 and X<gW and Y>=0 and Y<gH):
         if(gMatrix[X,Y, L.ctype] == T.ground):
@@ -309,6 +334,8 @@ def CountNeibghors(x, y):
 
     for xi in range(x0, x1):
         for yi in range(y0, y1):
+            if(xi==x and yi==y):
+                continue
             if(gMatrix[xi,yi, L.ctype] == T.person):
                 N += 1
     #end for(x, y)
@@ -328,15 +355,19 @@ def CountAttractionPoint(x, y):
     bFindRes = False    
 
     MOB = random.randint(0,100)
+    N = CountNeibghors(x, y)
+    if(N == 8):
+        return  # no chance
+
     if(gMatrix[x,y, L.mobility] > MOB):
         # high mobility, look for resources
-        if(CountNeibghors(x, y) < gMaxNeibghors):
+        if(N < gMaxNeibghors):
             # few neighbors, stay here
             return
         bFindRes = True
     else:
         # look for partner
-        if(CountNeibghors(x, y) >= gMaxNeibghors):
+        if(N >= gMaxNeibghors):
             # too many neighbors, look for free resources
             bFindRes = True
 
@@ -422,7 +453,7 @@ def MakeChildren(x, y):
 
     if(gMatrix[x,y, L.ctype] == T.ground):
         return
-    if(gMatrix[x,y, L.energy] <= gBirthEnergy):
+    if(gMatrix[x,y, L.energy] < gBirthEnergy):
         return
     if(gMatrix[x,y, L.sex] == T.male):
         return
@@ -440,17 +471,17 @@ def MakeChildren(x, y):
 
     for xi in range(x0, x1):
         for yi in range(y0, y1):
-            if(gMatrix[xi,yi, L.ctype] == T.ground):
-                if(xt == -1):
+            if(xt == -1):
+                if(gMatrix[xi,yi, L.ctype] == T.ground):
                     xt = xi
                     yt = yi
+                    continue
 
-                continue
             if(xi == x and yi == y):
                 continue
             if(gMatrix[xi,yi, L.sex] == T.female):
                 continue
-            if(gMatrix[xi,yi, L.age] < gAttChildSz + gMatrix[x,y, L.iq]/25):
+            if(gMatrix[xi,yi, L.age] < gAttChildSz + gMatrix[xi,yi, L.iq]/25):
                 continue
 
             fert = 1 * gMatrix[x, y, L.fert] * gMatrix[xi, yi, L.fert]
@@ -483,13 +514,26 @@ def Next():
                 if(bStop):
                     return
                 HandleResources(x, y)
+        for x in range(gW):
+            for y in range(gH):
+                if(bStop):
+                    return
                 FetchResources(x, y)
+        for x in range(gW):
+            for y in range(gH):
+                if(bStop):
+                    return
                 CountAttractionPoint(x, y)
+        for x in range(gW):
+            for y in range(gH):
+                if(bStop):
+                    return
                 MakeChildren(x, y)
 
     except Exception as e:
         print('ERR: '+ str(e))
         print(str(x)+","+str(y))
+        time.sleep(60)
 
     pass
     return    
