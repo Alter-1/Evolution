@@ -2,6 +2,9 @@ import random
 import numpy as np
 import pickle
 import time
+import threading
+
+from multiprocessing import Process, Pipe
 
 class Empty:
     pass        
@@ -61,6 +64,27 @@ gPersons=0
 gPersonsTotal=0
 
 bStop = False
+gWorldLock = threading.Lock()
+
+nLockCounter = 0
+
+def WLock():
+    global gWorldLock, nLockCounter
+    nLockCounter += 1
+    return gWorldLock.acquire(False)
+#end UILock()
+
+def WLockWait():
+    global gWorldLock, nLockCounter
+    nLockCounter += 1
+    return gWorldLock.acquire(True)
+#end UILock()
+
+def WRelease():
+    global gWorldLock, nLockCounter
+    nLockCounter -= 1
+    gWorldLock.release()
+#end UIRelease()
 
 def CrossGenes(xm, ym, xf, yf, layer):
     global gMatrix
@@ -501,12 +525,16 @@ def MakeChildren(x, y):
     CreateChild(xt, yt, X, Y, x, y)
 #end MakeChildren()
 
-def Next():
+def _Next():
     global gMatrix, gW, gH, gEpoch
+    global bStop
+
     print(str(gEpoch))
     gEpoch += 1
     if(gEpoch == 1):
         return
+
+    #print(str(bStop))
 
     try:
         for x in range(gW):
@@ -531,66 +559,243 @@ def Next():
                 MakeChildren(x, y)
 
     except Exception as e:
-        print('ERR: '+ str(e))
+        print('_Next ERR: '+ str(e))
         print(str(x)+","+str(y))
         time.sleep(60)
 
     pass
     return    
-#end Next()
+#end _Next()
+
+from multiprocessing import Process, Pipe
+gStarted = False
+
+def f(conn):
+    global gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal
+    global parent_conn
+    try:
+        parent_conn = conn
+        '''
+        gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal = conn.recv()
+        #s = conn.recv()
+        #print('got s')
+        #o = pickle.loads(s)
+        #print('unpacked s')
+        '''
+        o = conn.recv()
+        print('Try unpack world')
+        bRet = UnpackWorld(o)
+        print(str(gW)+'x'+ str(gH))
+        if(not bRet):
+            print('Cant unpack world')
+            return
+        
+        while(True):
+            #print(str(gEpoch))
+            if(conn.poll()):
+                print('Exit request')
+                break
+            _Next()
+            #conn.send([gMatrix, gEpoch, gPersons, gPersonsTotal])
+            o = PackWorld()
+            conn.send(o)
+        #end while()
+
+    except Exception as e:
+        print('f ERR: '+ str(e))
+        time.sleep(60)
+    pass
+    return    
+#end f()
+
+def NextLocked():
+    global gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal
+    global parent_conn, child_conn
+    global p, gStarted
+
+    if(not gStarted):
+        parent_conn, child_conn = Pipe()
+        p = Process(target=f, args=(parent_conn,))
+        p.start()
+        '''
+        child_conn.send([gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal])
+        '''
+        o = PackWorld()
+        #s = pickle.dumps(o)
+        child_conn.send(o)
+        
+        gStarted = True
+    #end if(not gStarted)
+
+
+    if(not p.is_alive()):
+        return False
+
+    if(not child_conn.poll()):
+        return False
+
+    #gMatrix, gEpoch, gPersons, gPersonsTotal = child_conn.recv()
+    o = child_conn.recv()
+    bRet = UnpackWorld(o)
+    return True
+
+#end NextLocked()
+
+def Next():
+    if(not WLock()):
+        return False
+    bRet = False
+    try:
+        bRet = NextLocked()
+    except Exception as e:
+        print('Next ERR: '+ str(e))
+    pass
+    WRelease()
+    return bRet
+#end Next():
+
+def Stop():
+    global parent_conn, child_conn
+    global p, gStarted
+
+    if(gStarted):
+        if(not p.is_alive()):
+            return
+        #child_conn.send("Stop")
+        #p.join()
+        p.terminate()
+        #p.close()
+        parent_conn.close()
+        child_conn.close()
+        gStarted = False
+    #end if(gStarted)
+
+#end Stop()
+
+def PackWorld():
+    global gMatrix       
+    global gMaxAge       
+    global gDiscoveryRate
+    global gMaxIQres     
+    global gAttSz        
+    global gAttChildSz   
+    global gChildAge     
+    global gBirthEnergy  
+    global gMaxNeibghors 
+    global gEpoch        
+    global gPersons      
+    global gPersonsTotal 
+    global gAllowLocalRes
+
+
+    #print("matrix=>"+str(gMatrix))
+
+    o = Empty()
+
+    o.version = 1
+    o.L = L()
+    #o.gMatrix         = np.copy(gMatrix)
+    o.gMatrix         = gMatrix
+    o.gMaxAge         = gMaxAge
+    o.gDiscoveryRate  = gDiscoveryRate
+    o.gMaxIQres       = gMaxIQres     
+    o.gAttSz          = gAttSz        
+    o.gAttChildSz     = gAttChildSz   
+    o.gChildAge       = gChildAge     
+    o.gBirthEnergy    = gBirthEnergy  
+    o.gMaxNeibghors   = gMaxNeibghors 
+    o.gEpoch          = gEpoch        
+    o.gPersons        = gPersons
+    o.gPersonsTotal   = gPersonsTotal 
+    o.gAllowLocalRes  = gAllowLocalRes
+
+    '''
+    for key, value in o.__dict__.items():
+        if not callable(value) and not key.startswith('__'):
+            print(str(key)+"=>"+str(value))
+    '''
+    return o
+#end PackWorld()
+
+def UnpackWorld(o):
+
+    global gMatrix       
+    global gMaxAge       
+    global gDiscoveryRate
+    global gMaxIQres     
+    global gAttSz        
+    global gAttChildSz   
+    global gChildAge     
+    global gBirthEnergy  
+    global gMaxNeibghors 
+    global gEpoch        
+    global gPersons      
+    global gPersonsTotal 
+    global gAllowLocalRes
+
+    global gH,gW,layers, gDepth
+
+    H,W,layers    = o.gMatrix.shape
+    if(layers != gDepth):
+        print('layers != gDepth')
+        gWorldLock.release()
+        return False
+
+    gH = H
+    gW = W
+
+    #gMatrix = np.zeros((W, H, gDepth), dtype=np.uint8)
+
+    try:
+        gMatrix         = o.gMatrix
+        #gMatrix[:]      = o.gMatrix
+        #gMatrix         = np.copy(o.gMatrix)
+        gMaxAge         = o.gMaxAge       
+        gDiscoveryRate  = o.gDiscoveryRate
+        gMaxIQres       = o.gMaxIQres     
+        gAttSz          = o.gAttSz        
+        gAttChildSz     = o.gAttChildSz   
+        gChildAge       = o.gChildAge     
+        gBirthEnergy    = o.gBirthEnergy  
+        gMaxNeibghors   = o.gMaxNeibghors 
+        gEpoch          = o.gEpoch        
+        gPersons        = o.gPersons
+        gPersonsTotal   = o.gPersonsTotal 
+        gAllowLocalRes  = o.gAllowLocalRes
+    except Exception as e:
+        print('UnpackWorld ERR: '+ str(e))
+        pass
+
+    '''
+    for key, value in o.__dict__.items():
+        if not callable(value) and not key.startswith('__'):
+            print(str(key)+"=>"+str(value))
+    '''
+    return True
+#end UnpackWorld()
 
 def Save(fn):
     with open(fn, 'wb') as fh:
-        o = Empty()
-
-        o.version = 1
-        o.L = L()
-        o.gMatrix         = gMatrix
-        o.gMaxAge         = gMaxAge       
-        o.gDiscoveryRate  = gDiscoveryRate
-        o.gMaxIQres       = gMaxIQres     
-        o.gAttSz          = gAttSz        
-        o.gAttChildSz     = gAttChildSz   
-        o.gChildAge       = gChildAge     
-        o.gBirthEnergy    = gBirthEnergy  
-        o.gMaxNeibghors   = gMaxNeibghors 
-        o.gEpoch          = gEpoch        
-        o.gPersons        = gPersons
-        o.gPersonsTotal   = gPersonsTotal 
-        o.gAllowLocalRes  = gAllowLocalRes
-
+        o = PackWorld()
         pickle.dump(o, fh)
 
     return
 #end Save()
 
 def Load(fn):
+
     with open(fn, 'rb') as fh:
         o = pickle.load(fh) 
         if(o.version != 1):
             return False
 
-        H,W,layers    = o.gMatrix.shape
-        if(layers != gDepth):
-            return False
-        gH = H
-        gW = W
-        try:
-            gMatrix[:]      = o.gMatrix
-            gMaxAge         = o.gMaxAge       
-            gDiscoveryRate  = o.gDiscoveryRate
-            gMaxIQres       = o.gMaxIQres     
-            gAttSz          = o.gAttSz        
-            gAttChildSz     = o.gAttChildSz   
-            gChildAge       = o.gChildAge     
-            gBirthEnergy    = o.gBirthEnergy  
-            gMaxNeibghors   = o.gMaxNeibghors 
-            gEpoch          = o.gEpoch        
-            gPersons        = o.gPersons
-            gPersonsTotal   = o.gPersonsTotal 
-            gAllowLocalRes  = o.gAllowLocalRes
-        except:
-            pass
+        WLockWait()
+    
+        Stop()
+        UnpackWorld(o)
+
+        WRelease()
+
     #end with open()
 
     return True

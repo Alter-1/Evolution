@@ -131,6 +131,8 @@ class VideoCaptureDaemon(threading.Thread):
         self.prev_mode = self.mode    
         self.prev_epoch = World.gEpoch
 
+        lMatrix = np.copy(World.gMatrix)
+
         for x in range(self.w):
             for y in range(self.h):
 
@@ -139,29 +141,29 @@ class VideoCaptureDaemon(threading.Thread):
                 b = 0
                 if(self.mode == 0 or self.mode == L.age):
 
-                    if(World.gMatrix[x,y, L.ctype] == T.ground):
-                        g = 50+int(World.gMatrix[x,y, L.resources]*1.5)
+                    if(lMatrix[x,y, L.ctype] == T.ground):
+                        g = 50+int(lMatrix[x,y, L.resources]*1.5)
                     else:
                         #print("@"+str(x)+"x"+str(y))
-                        if(World.gMatrix[x,y, L.sex] == T.male):
-                            b = 250-World.gMatrix[x,y, L.age]*2
+                        if(lMatrix[x,y, L.sex] == T.male):
+                            b = 250-lMatrix[x,y, L.age]*2
                         else:
-                            r = 250-World.gMatrix[x,y, L.age]*2
-                        g = 50 + int(World.gMatrix[x,y, L.energy]*1.5)
+                            r = 250-lMatrix[x,y, L.age]*2
+                        g = 50 + int(lMatrix[x,y, L.energy]*1.5)
                 
                 #if(self.mode > L.age):
                 else:
-                    if(World.gMatrix[x,y, L.ctype] == T.person):
+                    if(lMatrix[x,y, L.ctype] == T.person):
 
                         '''
                         if(self.mode == 1):
-                            v = World.gMatrix[x,y, L.energy]
+                            v = lMatrix[x,y, L.energy]
                         if(self.mode >= L.genes):
-                            v = World.gMatrix[x,y, self.mode]
+                            v = lMatrix[x,y, self.mode]
                         '''
 
-                        v = World.gMatrix[x,y, self.mode]*2
-                        if(World.gMatrix[x,y, L.sex] == T.male):
+                        v = lMatrix[x,y, self.mode]*2
+                        if(lMatrix[x,y, L.sex] == T.male):
                             b = 50+v
                         else:
                             r = 50+v
@@ -243,7 +245,8 @@ class SimThread(threading.Thread):
         #self.data[0:256, 0:256] = [255, 0, 0] # red patch in upper left
     def Stop(self):
         self.bStop = True
-        World.bStop = True
+        #World.bStop = True
+        World.Stop()
         while(self.active):
             time.sleep(1)
 
@@ -252,7 +255,9 @@ class SimThread(threading.Thread):
         while(not self.bStop):
 
             try:
-                World.Next()
+                if(not World.Next()):
+                    time.sleep(0.5)
+
             except Exception as e:
                 print('ERR: '+ str(e))
                 print("Can't read frame, reconnect")
