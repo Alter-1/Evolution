@@ -133,41 +133,44 @@ class VideoCaptureDaemon(threading.Thread):
 
         lMatrix = np.copy(World.gMatrix)
 
-        for x in range(self.w):
-            for y in range(self.h):
+#        for x in range(self.w):
+#            for y in range(self.h):
+
+        x = 0
+        #for ax in lMatrix:
+        while(x<self.w):
+            y = 0
+            while(y<self.h):
 
                 g = 0
                 r = 0
                 b = 0
+
                 if(self.mode == 0 or self.mode == L.age):
 
                     if(lMatrix[x,y, L.ctype] == T.ground):
                         g = 50+int(lMatrix[x,y, L.resources]*1.5)
                     else:
                         #print("@"+str(x)+"x"+str(y))
+                        
                         if(lMatrix[x,y, L.sex] == T.male):
                             b = 250-lMatrix[x,y, L.age]*2
                         else:
                             r = 250-lMatrix[x,y, L.age]*2
+                        
                         g = 50 + int(lMatrix[x,y, L.energy]*1.5)
                 
                 #if(self.mode > L.age):
                 else:
                     if(lMatrix[x,y, L.ctype] == T.person):
 
-                        '''
-                        if(self.mode == 1):
-                            v = lMatrix[x,y, L.energy]
-                        if(self.mode >= L.genes):
-                            v = lMatrix[x,y, self.mode]
-                        '''
-
                         v = lMatrix[x,y, self.mode]*2
+                        
                         if(lMatrix[x,y, L.sex] == T.male):
                             b = 50+v
                         else:
                             r = 50+v
-
+                        
                         g = 50 + v
 
 
@@ -176,6 +179,11 @@ class VideoCaptureDaemon(threading.Thread):
                 self.data[x*2+1,y*2] = rgb
                 self.data[x*2,y*2+1] = rgb
                 self.data[x*2+1,y*2+1] = rgb
+
+                y+=1
+            #end for y
+            x+=1
+        #end for x
 
         return self.data
 
