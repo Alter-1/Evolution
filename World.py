@@ -311,8 +311,8 @@ def FetchResources(x, y):
             if(gMatrix[x,y, L.aggressive] * (1 + iq/10) < AGGR):
                 return
 
-            DEF = random.randint(0,100)
-            if(gMatrix[X,Y, L.defence] * (1 + iq/10)  < DEF):
+            DEFENCE = random.randint(0,100)
+            if(gMatrix[X,Y, L.defence] * (1 + iq/10)  < DEFENCE):
                 gMatrix[X,Y, L.energy] -= 1
                 gMatrix[x,y, L.energy] += 1
                 return
@@ -560,7 +560,7 @@ def _Next():
 
     except Exception as e:
         print('_Next ERR: '+ str(e))
-        print(str(x)+","+str(y))
+        #print(str(x)+","+str(y))
         time.sleep(60)
 
     pass

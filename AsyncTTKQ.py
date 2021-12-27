@@ -1,7 +1,7 @@
 # // _AT_ 230821 09:53 
 from ods import ODSWrap
-import queue
 import threading
+import queue
 
 lg = ODSWrap("AsyncTTKQ")
 printX = lg.printW
@@ -39,10 +39,10 @@ class AsyncTTKQ:
                 # simple test, print it (in real life, you would
                 # suitably update the GUI's display in a richer fashion).
                 self.ActionReal(arg)
-            except Queue.Empty:
-                # just on general principles, although we don't
-                # expect this branch to be taken in this case
-                return
+#            except Queue.Empty:
+#                # just on general principles, although we don't
+#                # expect this branch to be taken in this case
+#                return
             except Exception as e:
                 printX('ERR: '+ str(e))
                 continue

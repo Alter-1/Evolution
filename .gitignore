@@ -14,5 +14,6 @@ dist
 
 .ipynb_checkpoints
 __pycache__
+PYD_Files
 
 *.lsworld
