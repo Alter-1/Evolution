@@ -525,6 +525,22 @@ def MakeChildren(x, y):
     CreateChild(xt, yt, X, Y, x, y)
 #end MakeChildren()
 
+def DoStage(StageF):
+    global gMatrix, gW, gH, gEpoch
+    global bStop
+    x = 0
+    while(x<gW):
+        y = 0
+        while(y<gH):
+            if(bStop):
+                return
+            StageF(x, y)
+            y+=1
+        #end while(y)
+        x+=1
+    #end while(x)
+#end DoStage()
+
 def _Next():
     global gMatrix, gW, gH, gEpoch
     global bStop
@@ -537,26 +553,10 @@ def _Next():
     #print(str(bStop))
 
     try:
-        for x in range(gW):
-            for y in range(gH):
-                if(bStop):
-                    return
-                HandleResources(x, y)
-        for x in range(gW):
-            for y in range(gH):
-                if(bStop):
-                    return
-                FetchResources(x, y)
-        for x in range(gW):
-            for y in range(gH):
-                if(bStop):
-                    return
-                CountAttractionPoint(x, y)
-        for x in range(gW):
-            for y in range(gH):
-                if(bStop):
-                    return
-                MakeChildren(x, y)
+        DoStage(HandleResources)
+        DoStage(FetchResources)
+        DoStage(CountAttractionPoint)
+        DoStage(MakeChildren)
 
     except Exception as e:
         print('_Next ERR: '+ str(e))

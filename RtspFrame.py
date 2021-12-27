@@ -137,36 +137,39 @@ class VideoCaptureDaemon(threading.Thread):
 #            for y in range(self.h):
 
         x = 0
-        #for ax in lMatrix:
-        while(x<self.w):
+        for ax in lMatrix:
+        #while(x<self.w):
             y = 0
-            while(y<self.h):
+            for lItem in ax:
+            #while(y<self.h):
 
                 g = 0
                 r = 0
                 b = 0
 
+                #lItem = lMatrix[x,y]
+
                 if(self.mode == 0 or self.mode == L.age):
 
-                    if(lMatrix[x,y, L.ctype] == T.ground):
-                        g = 50+int(lMatrix[x,y, L.resources]*1.5)
+                    if(lItem[L.ctype] == T.ground):
+                        g = 50+int(lItem[L.resources]*1.5)
                     else:
                         #print("@"+str(x)+"x"+str(y))
                         
-                        if(lMatrix[x,y, L.sex] == T.male):
-                            b = 250-lMatrix[x,y, L.age]*2
+                        if(lItem[L.sex] == T.male):
+                            b = 250-lItem[L.age]*2
                         else:
-                            r = 250-lMatrix[x,y, L.age]*2
+                            r = 250-lItem[L.age]*2
                         
-                        g = 50 + int(lMatrix[x,y, L.energy]*1.5)
+                        g = 50 + int(lItem[L.energy]*1.5)
                 
                 #if(self.mode > L.age):
                 else:
-                    if(lMatrix[x,y, L.ctype] == T.person):
+                    if(lItem[L.ctype] == T.person):
 
-                        v = lMatrix[x,y, self.mode]*2
+                        v = lItem[self.mode]*2
                         
-                        if(lMatrix[x,y, L.sex] == T.male):
+                        if(lItem[L.sex] == T.male):
                             b = 50+v
                         else:
                             r = 50+v

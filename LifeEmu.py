@@ -91,7 +91,7 @@ def Save():
          
 def Load():
     try:
-        fn = askopenfilename(initialdir="./", title="Select An World", filetypes=(("Life simulator world", "*.lsworld"),))
+        fn = askopenfilename(initialdir="./", title="Select World", filetypes=(("Life simulator world", "*.lsworld"),))
         World.Load(fn)
     except Exception as e:
         print('ERR: '+ str(e))
