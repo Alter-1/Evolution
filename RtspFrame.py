@@ -37,6 +37,7 @@ class VideoStreamWindow():
         # Update image on canvas
         window.after(self.interval, self.update_image)
         self.button = ttk.Button()
+    #end __init__()
         
     def Crop(self, x, y):
         self.daemon.Crop(x, y)
@@ -69,6 +70,7 @@ class VideoStreamWindow():
             self.window.after(self.interval, self.update_image)
         except:
             Stop()
+    #end update_image()
 
     def SetMode(self, mode):
         self.daemon.mode = mode
@@ -85,14 +87,16 @@ class VideoStreamWindow():
             #    time.sleep(0.1)
         except:
             pass
+    #end Stop()
 
-# end class VideoStreamWindow
+#end class VideoStreamWindow
 
 def crop_center(img,cropx,cropy):
     y,x,c = img.shape
     startx = x//2 - cropx//2
     starty = y//2 - cropy//2    
     return img[starty:starty+cropy, startx:startx+cropx, :]
+#end crop_center()
 
 class VideoCaptureDaemon(threading.Thread):
 
@@ -117,10 +121,12 @@ class VideoCaptureDaemon(threading.Thread):
 
         self.daemon = SimThread()
         #self.daemon.start()
+    #end __init__()
 
     def Stop(self):
         self.stop = True
         self.daemon.Stop()
+    #end Stop()
 
     def NextFrame(self):
         #World.Next()
@@ -189,7 +195,8 @@ class VideoCaptureDaemon(threading.Thread):
         #end for x
 
         return self.data
-
+    #end NextFrame()
+    
     def run(self):
         self.daemon.start()
         self.active = True
@@ -243,7 +250,9 @@ class VideoCaptureDaemon(threading.Thread):
         self.daemon.join()
         print("exit cv2")
 
-#end class VideoCaptureDaemon()
+    #end run()
+
+#end class VideoCaptureDaemon
 
 
 class SimThread(threading.Thread):
@@ -254,12 +263,15 @@ class SimThread(threading.Thread):
         self.active = False
 
         #self.data[0:256, 0:256] = [255, 0, 0] # red patch in upper left
+    #end __init__()
+
     def Stop(self):
         self.bStop = True
         #World.bStop = True
         World.Stop()
         while(self.active):
             time.sleep(1)
+    #end Stop()
 
     def run(self):
         self.active = True
@@ -278,3 +290,7 @@ class SimThread(threading.Thread):
         #end while()
         self.active = False
         print("exit st")
+
+    #end run()
+
+#end class SimThread

@@ -178,7 +178,7 @@ def CreateChild(x, y, xm, ym, xf, yf):
 
     gPersons += 1
     gPersonsTotal += 1
-    print("Birth sex/total", gMatrix[x,y, L.sex], gPersons)
+    #print("Birth sex/total", gMatrix[x,y, L.sex], gPersons)
 #end CreateChild()
 
 def CreateMatrix(w, h, p):
@@ -206,7 +206,7 @@ def HandleResources(x, y):
             gMatrix[x,y, L.ctype] = T.ground
             gMatrix[x,y, L.resources] = gMatrix[x,y, L.energy]
             gPersons -= 1
-            print("Die sex/age/energy/iq total", gMatrix[x,y, L.sex], gMatrix[x,y, L.age], gMatrix[x,y, L.energy], gMatrix[x,y, L.iq], gPersons)
+            #print("Die sex/age/energy/iq total", gMatrix[x,y, L.sex], gMatrix[x,y, L.age], gMatrix[x,y, L.energy], gMatrix[x,y, L.iq], gPersons)
             return
 
         gMatrix[x,y, L.age] += 1
@@ -525,11 +525,11 @@ def MakeChildren(x, y):
     CreateChild(xt, yt, X, Y, x, y)
 #end MakeChildren()
 
-def DoStage(StageF):
+def DoStage(StageF, x0, x1):
     global gMatrix, gW, gH, gEpoch
     global bStop
-    x = 0
-    while(x<gW):
+    x = x0
+    while(x<x1):
         y = 0
         while(y<gH):
             if(bStop):
@@ -541,7 +541,7 @@ def DoStage(StageF):
     #end while(x)
 #end DoStage()
 
-def _Next():
+def _Next(x0, x1):
     global gMatrix, gW, gH, gEpoch
     global bStop
 
@@ -553,10 +553,10 @@ def _Next():
     #print(str(bStop))
 
     try:
-        DoStage(HandleResources)
-        DoStage(FetchResources)
-        DoStage(CountAttractionPoint)
-        DoStage(MakeChildren)
+        DoStage(HandleResources,      x0, x1)
+        DoStage(FetchResources,       x0, x1)
+        DoStage(CountAttractionPoint, x0, x1)
+        DoStage(MakeChildren,         x0, x1)
 
     except Exception as e:
         print('_Next ERR: '+ str(e))
@@ -583,22 +583,43 @@ def f(conn):
         #print('unpacked s')
         '''
         o = conn.recv()
+        conn.send("Done")
         print('Try unpack world')
         bRet = UnpackWorld(o)
         print(str(gW)+'x'+ str(gH))
         if(not bRet):
             print('Cant unpack world')
             return
-        
+
+
         while(True):
             #print(str(gEpoch))
-            if(conn.poll()):
-                print('Exit request')
-                break
-            _Next()
+            #if(conn.poll()):
+            #    print('Exit request')
+            #    break
+
+            #print("read task")
+            gPart, th = conn.recv()
+            
+            d = int(gW/4)
+
+            x0 = int((gPart + th*2)*d)
+            x1 = x0+d
+
+            x0s = max(x0-gAttSz, 0)
+            x1s = min(x1+gAttSz, gW)
+            print(str(th)+':'+ str(x0)+'-'+ str(x1))
+
+            _Next(x0, x1)
             #conn.send([gMatrix, gEpoch, gPersons, gPersonsTotal])
-            o = PackWorld()
-            conn.send(o)
+            #o = PackWorld()
+            #conn.send(o)
+            conn.send([gMatrix[x0s:x1s], x0s, x1s])
+
+            print("update worker "+str(th))
+            Matrixs, x0s, x1s = conn.recv()
+            gMatrix[x0s:x1s] = Matrixs
+
         #end while()
 
     except Exception as e:
@@ -608,35 +629,80 @@ def f(conn):
     return    
 #end f()
 
-def NextLocked():
-    global gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal
-    global parent_conn, child_conn
-    global p, gStarted
+gPart = 0
 
-    if(not gStarted):
-        parent_conn, child_conn = Pipe()
-        p = Process(target=f, args=(parent_conn,))
-        p.start()
+def NextTask():
+    global gEpoch, gPart
+    global parent_conn1, child_conn1
+    global parent_conn2, child_conn2
+
+    print("send tasks")
+    child_conn1.send([gPart, 0])
+    child_conn2.send([gPart, 1])
+
+    gPart = int(gPart) ^ int(1)
+    if(gPart == 0):
+        gEpoch += 1
+
+#end NextTask()
+
+def NextLocked():
+    global gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal, gPart
+    global parent_conn1, child_conn1
+    global parent_conn2, child_conn2
+    global p1, p2, gStarted
+
+    bInit = not gStarted
+
+    if(bInit):
+        gPart = 0
+        parent_conn1, child_conn1 = Pipe()
+        parent_conn2, child_conn2 = Pipe()
+        p1 = Process(target=f, args=(parent_conn1,))
+        p1.start()
+        p2 = Process(target=f, args=(parent_conn2,))
+        p2.start()
         '''
         child_conn.send([gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal])
         '''
         o = PackWorld()
         #s = pickle.dumps(o)
-        child_conn.send(o)
+        child_conn1.send(o)
+        child_conn2.send(o)
+
+        child_conn1.recv()
+        child_conn2.recv()
+
+        NextTask()
         
         gStarted = True
     #end if(not gStarted)
 
 
-    if(not p.is_alive()):
+    if(not p1.is_alive() or not p2.is_alive()):
         return False
 
-    if(not child_conn.poll()):
-        return False
+    if(not bInit):
+        if(not child_conn1.poll() or not child_conn2.poll()):
+            return False
 
     #gMatrix, gEpoch, gPersons, gPersonsTotal = child_conn.recv()
-    o = child_conn.recv()
-    bRet = UnpackWorld(o)
+    #o = child_conn.recv()
+    #bRet = UnpackWorld(o)
+
+    print("read workers")
+    Matrixs1, x0s1, x1s1 = child_conn1.recv()
+    gMatrix[x0s1:x1s1] = Matrixs1
+
+    Matrixs2, x0s2, x1s2 = child_conn2.recv()
+    gMatrix[x0s2:x1s2] = Matrixs2
+
+    print("sync workers")
+    child_conn1.send([Matrixs2, x0s2, x1s2])
+    child_conn2.send([Matrixs1, x0s1, x1s1])
+
+    NextTask()
+
     return True
 
 #end NextLocked()
@@ -655,18 +721,24 @@ def Next():
 #end Next():
 
 def Stop():
-    global parent_conn, child_conn
-    global p, gStarted
+    global parent_conn1, child_conn1
+    global parent_conn2, child_conn2
+    global p, p2, gStarted
 
     if(gStarted):
-        if(not p.is_alive()):
-            return
-        #child_conn.send("Stop")
-        #p.join()
-        p.terminate()
-        #p.close()
-        parent_conn.close()
-        child_conn.close()
+        if(p1.is_alive()):
+            #child_conn.send("Stop")
+            #p.join()
+            p1.terminate()
+            #p.close()
+            parent_conn1.close()
+            child_conn1.close()
+
+        if(p2.is_alive()):
+            p2.terminate()
+            parent_conn2.close()
+            child_conn2.close()
+
         gStarted = False
     #end if(gStarted)
 
