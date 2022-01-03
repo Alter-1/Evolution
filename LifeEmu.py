@@ -70,15 +70,6 @@ def onclick(e):
     gY=e.y
     print("Cooordinates %d %d"%(gX,gY))
 
-    '''
-    if(not (gXRayImg is None)):
-        texted_image = cv2.putText(img = np.copy(gXRayImg), text="X", org=(int(gX)-5, int(gY)-5), fontFace=1, fontScale=1, color=(255, 0, 0), thickness=2)
-
-        OGimage = Image.fromarray(texted_image)
-        XRimage = ImageTk.PhotoImage(OGimage) # to ImageTk format
-
-        ghImage = XRcanvas.create_image(0, 0, anchor=NW, image=XRimage)
-    '''
     return(gX,gY)
 
 def Save():
@@ -120,11 +111,6 @@ if __name__ == "__main__" :
 #--------------------------------------------- Video Frame -------------------------------------------------------------
 
     video = VideoStreamWindow(gui, 300, 300)
-#    video.Crop(320, 444)
-#    video.Crop(980, 1000)
-#    video.VFlip(True)
-    #---- add X to videostream ----
-#    video.SetPostProcessing(AddXtoVideoStream)
 
     commonframe = LabelFrame(gui, text="Modes", width=600)
     
