@@ -6,7 +6,6 @@ from World import T
 
 from tkinter import *
 from tkinter import ttk
-from selenium.webdriver.support.expected_conditions import number_of_windows_to_be
 from ttkthemes import ThemedTk
 
 import cv2  

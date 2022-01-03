@@ -2,12 +2,22 @@
 
 # OutputDebugString/printX/etc
 
-from win32api import OutputDebugString
+import sys
+# its win32, maybe there is win64 too?
+is_windows = sys.platform.startswith('win')
+if is_windows:
+    from win32api import OutputDebugString
+#end if is_windows
 
 def _OutputDebugString(x):
     OutputDebugString(str(x))
 
-handlers = [print, _OutputDebugString]
+if is_windows:
+    handlers = [print, _OutputDebugString]
+else:
+    handlers = [print]
+#end if is_windows
+
 global_prefix = "Python"
 
 def printX(msg):
