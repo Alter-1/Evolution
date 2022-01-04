@@ -32,10 +32,10 @@ class VideoStreamWindow():
         self.stop = False
         # Create canvas for image
         self.canvas = tk.Canvas(self.window, width=w*2, height=h*2, bg='black')
-        self.canvas.grid(row=1, column=1)
+        self.canvas.grid(row=1, column=0, columnspan=1)
         # Update image on canvas
         window.after(self.interval, self.update_image)
-        self.button = ttk.Button()
+        #self.button = ttk.Button()
     #end __init__()
         
     def Crop(self, x, y):
