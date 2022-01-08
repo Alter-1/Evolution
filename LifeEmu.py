@@ -34,6 +34,9 @@ PrintTextBox = None
 TextArea = None
 lbEpoch = None
 
+lbVis = None
+vMode = 0
+
 chkZIQ_var  = None
 chkLres_var = None
 
@@ -58,13 +61,20 @@ def PrintTextBoxReal(myStr):
 def ClearScreen():
     TextArea.delete("1.0", "end")
 
-
+def SetMode(mode):
+    global video, vMode
+    video.SetMode(mode)
+    vMode = mode
+#end SetMode()
 
 def UpdateOnFrameChange(videoStream):
-    global lbEpoch
+    global lbEpoch, lbVis, vMode
+
     lbEpoch.config(text=str(World.gEpoch))
     lbEpoch.update()
     #printX("Epoch:"+str(World.gEpoch))
+    lbVis.config(text=World.LayerName[vMode])
+    lbVis.update()
 
     return videoStream    
 #end UpdateOnFrameChange()
@@ -85,14 +95,20 @@ def Save():
     except Exception as e:
         print('ERR: '+ str(e))
     return
+#end Save()
          
 def Load():
     try:
         fn = askopenfilename(initialdir="./", title="Select World", filetypes=(("Life simulator world", "*.lsworld"),))
         World.Load(fn)
+
+        chkZIQ_var.set( World.gIQ0          )
+        chkLres_var.set(World.gAllowLocalRes)
+
     except Exception as e:
         print('ERR: '+ str(e))
     return
+#end Load()
 
 def New():
     global gW, gH
@@ -151,19 +167,22 @@ if __name__ == "__main__" :
     commonframe.grid(column = 0, row = 2, columnspan=1)
     commonframe.configure(background='black',foreground='green')
 
-    btAge   = ttk.Button(commonframe, text = "Age/energy", command = lambda: video.SetMode(L.age   )).grid(column = 1, row = 1,sticky=W, padx=8, pady=5)
-    btEnergy= ttk.Button(commonframe, text = "Energy",     command = lambda: video.SetMode(L.energy)).grid(column = 2, row = 1,sticky=W, padx=8, pady=5)
-    btExp   = ttk.Button(commonframe, text = "Exp",        command = lambda: video.SetMode(L.exp   )).grid(column = 3, row = 1,sticky=W, padx=8, pady=5)
+    btAge   = ttk.Button(commonframe, text = "Age/energy", command = lambda: SetMode(L.age   )).grid(column = 1, row = 1,sticky=W, padx=8, pady=5)
+    btEnergy= ttk.Button(commonframe, text = "Energy",     command = lambda: SetMode(L.energy)).grid(column = 2, row = 1,sticky=W, padx=8, pady=5)
+    btExp   = ttk.Button(commonframe, text = "Exp",        command = lambda: SetMode(L.exp   )).grid(column = 3, row = 1,sticky=W, padx=8, pady=5)
 
     lbEpoch = ttk.Label(commonframe, text="-")
     lbEpoch.grid(column = 4, row = 1)
 
-    btSahre = ttk.Button(commonframe, text = "Share", command = lambda: video.SetMode(L.share     )).grid( column = 1, row = 2,sticky=W, padx=8, pady=5)
-    btAgg   = ttk.Button(commonframe, text = "Aggr",  command = lambda: video.SetMode(L.aggressive)).grid( column = 2, row = 2,sticky=W, padx=8, pady=5)
-    btIQ    = ttk.Button(commonframe, text = "IQ",    command = lambda: video.SetMode(L.iq        )).grid( column = 3, row = 2,sticky=W, padx=8, pady=5)
-    btDef   = ttk.Button(commonframe, text = "Def",   command = lambda: video.SetMode(L.defence   )).grid( column = 4, row = 2,sticky=W, padx=8, pady=5)
-    btMob   = ttk.Button(commonframe, text = "Mob",   command = lambda: video.SetMode(L.mobility  )).grid( column = 5, row = 2,sticky=W, padx=8, pady=5)
-    btFert  = ttk.Button(commonframe, text = "Fert",  command = lambda: video.SetMode(L.fert      )).grid( column = 6, row = 2,sticky=W, padx=8, pady=5)
+    lbVis = ttk.Label(commonframe, text="")
+    lbVis.grid  (column = 5, row = 1)
+
+    btSahre = ttk.Button(commonframe, text = "Share", command = lambda: SetMode(L.share     )).grid( column = 1, row = 2,sticky=W, padx=8, pady=5)
+    btAgg   = ttk.Button(commonframe, text = "Aggr",  command = lambda: SetMode(L.aggressive)).grid( column = 2, row = 2,sticky=W, padx=8, pady=5)
+    btIQ    = ttk.Button(commonframe, text = "IQ",    command = lambda: SetMode(L.iq        )).grid( column = 3, row = 2,sticky=W, padx=8, pady=5)
+    btDef   = ttk.Button(commonframe, text = "Def",   command = lambda: SetMode(L.defence   )).grid( column = 4, row = 2,sticky=W, padx=8, pady=5)
+    btMob   = ttk.Button(commonframe, text = "Mob",   command = lambda: SetMode(L.mobility  )).grid( column = 5, row = 2,sticky=W, padx=8, pady=5)
+    btFert  = ttk.Button(commonframe, text = "Fert",  command = lambda: SetMode(L.fert      )).grid( column = 6, row = 2,sticky=W, padx=8, pady=5)
 
     chkZIQ_var  = tk.IntVar(commonframe, int(World.gIQ0          ))
     chkLres_var = tk.IntVar(commonframe, int(World.gAllowLocalRes))

@@ -35,6 +35,25 @@ class L:
 
     layers    = 12
 
+LayerName = [
+    "resources ",
+    "ctype     ",
+    "energy    ",
+    "age       ",
+    "sex       ",
+    "exp       ",
+                
+    #"genes     ",
+                
+    "share     ",
+    "aggressive",
+    "iq        ",
+    "defence   ",
+    "mobility  ",
+    "fert      ",
+                
+    "layers    "]
+
 class T:
     ground = 0
     person = 1
@@ -158,14 +177,15 @@ def CreateChild(x, y, xm, ym, xf, yf):
         de = gBirthEnergy
 
     gMatrix[x, y, L.energy] = random.randint(1,de)
-    gMatrix[xf, yf, L.energy] -= int(de)
+    gMatrix[xf, yf, L.energy] -= de
 
     de = (gBirthEnergy * gMatrix[xm, ym, L.share]) / 200
     if(gMatrix[xm, ym, L.energy] < de):
         de = gMatrix[xm, ym, L.energy]/2
 
-    gMatrix[xm, ym, L.energy] -= int(de)
-    gMatrix[xf, yf, L.energy] += int(de)
+    de = int(de)
+    gMatrix[xm, ym, L.energy] -= de
+    gMatrix[xf, yf, L.energy] += de
 
     for layer in range(L.genes, L.layers):
         gMatrix[x, y, layer     ] = CrossGenes(xm, ym, xf, yf, layer)
