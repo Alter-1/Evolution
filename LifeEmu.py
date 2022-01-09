@@ -111,7 +111,7 @@ def Load():
 #end Load()
 
 def New():
-    global gW, gH
+    #global gW, gH
     bLocked = False
     try:
         print('Lock')
@@ -124,7 +124,7 @@ def New():
         World.gIQ0           = (chkZIQ_var.get() == 1)
         World.gAllowLocalRes = (chkLres_var.get() == 1)
 
-        World.CreateMatrix(gW, gH, 2500)
+        World.CreateMatrix(World.gW, World.gH, 2500)
     except Exception as e:
         print('ERR: '+ str(e))
 

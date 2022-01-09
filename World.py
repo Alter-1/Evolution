@@ -61,6 +61,10 @@ class T:
     male = 0
     female = 1
 
+    # mutation range
+    mutExt = 0  # depends on delta between current range and max/min available
+    mutInt = 1  # depends only on current range +/- N% with fixed minimal step
+
 
 gDepth = L.layers
 gW = 0
@@ -72,11 +76,14 @@ gAttSz = 10
 gAttChildSz = 2
 gChildAge = 10
 gBirthEnergy = 4
+gFailedBirthEnergy = 1
 gMaxNeibghors = 6
 gAllowLocalRes = False
 gIQ0 = True
 gMutationRate = 1
 gMutationFactor = 3
+gMutationMinStep = 5
+gMutationTypeV = 1
 
 gEpoch=0
 gPersons=0
@@ -107,7 +114,7 @@ def WRelease():
 
 def CrossGenes(xm, ym, xf, yf, layer):
     global gMatrix
-    global gMutationRate, gMutationFactor
+    global gMutationRate, gMutationFactor, gMutationMinStep, gMutationTypeV
 
     a = gMatrix[xm, ym, layer]
     b = gMatrix[xf, yf, layer]
@@ -121,7 +128,11 @@ def CrossGenes(xm, ym, xf, yf, layer):
     if(m < gMutationRate):
         v0 = min(a, b)
         v1 = max(a, b)
-        r = random.randint(int(v0-v0/gMutationFactor-1), int(v1+(100-v1)/gMutationFactor+1))
+        if(gMutationTypeV == T.mutInt):
+            d = (int)(max((v1-v0)/gMutationFactor, 5))
+            r = random.randint(v0-d, v1+d)
+        else:
+            r = random.randint(int(v0-v0/gMutationFactor-1), int(v1+(100-v1)/gMutationFactor+1))
         r = max(0, r)
         r = min(r, 100)
 
@@ -163,7 +174,7 @@ def CreatePerson(x, y):
 #end CreatePerson()
 
 def CreateChild(x, y, xm, ym, xf, yf):
-    global gMatrix, gBirthEnergy, gPersons, gPersonsTotal
+    global gMatrix, gBirthEnergy, gFailedBirthEnergy, gPersons, gPersonsTotal
 
     gMatrix[x, y, L.ctype ] = T.person
     #gMatrix[x, y, L.energy] = random.randint(10,20)
@@ -493,7 +504,7 @@ def CountAttractionPoint(x, y):
 #end CountAttractionPoint()
 
 def MakeChildren(x, y):
-    global gMatrix, gW, gH, gAttSz, gAttChildSz, gBirthEnergy
+    global gMatrix, gW, gH, gAttSz, gAttChildSz, gBirthEnergy, gFailedBirthEnergy
 
     if(gMatrix[x,y, L.ctype] == T.ground):
         return
@@ -538,7 +549,10 @@ def MakeChildren(x, y):
                 if(not xt == -1):
                     break
 
-    if(xt == -1 or X == -1):
+    if(X == -1):  # no partner
+        return
+    if(xt == -1): # failed birth, not free place
+        gMatrix[x,y, L.energy] -= gFailedBirthEnergy
         return
 
     # target, male, female
@@ -773,13 +787,17 @@ def PackWorld():
     global gAttChildSz   
     global gChildAge     
     global gBirthEnergy  
+    global gFailedBirthEnergy
     global gMaxNeibghors 
     global gEpoch        
     global gPersons      
     global gPersonsTotal 
     global gAllowLocalRes
-
-
+    global gMutationRate   
+    global gMutationFactor 
+    global gMutationMinStep
+    global gMutationTypeV  
+    
     #print("matrix=>"+str(gMatrix))
 
     o = Empty()
@@ -795,11 +813,16 @@ def PackWorld():
     o.gAttChildSz     = gAttChildSz   
     o.gChildAge       = gChildAge     
     o.gBirthEnergy    = gBirthEnergy  
+    o.gFailedBirthEnergy= gFailedBirthEnergy
     o.gMaxNeibghors   = gMaxNeibghors 
     o.gEpoch          = gEpoch        
     o.gPersons        = gPersons
     o.gPersonsTotal   = gPersonsTotal 
     o.gAllowLocalRes  = gAllowLocalRes
+    o.gMutationRate   = gMutationRate   
+    o.gMutationFactor = gMutationFactor 
+    o.gMutationMinStep= gMutationMinStep
+    o.gMutationTypeV  = gMutationTypeV
 
     '''
     for key, value in o.__dict__.items():
@@ -819,11 +842,16 @@ def UnpackWorld(o):
     global gAttChildSz   
     global gChildAge     
     global gBirthEnergy  
+    global gFailedBirthEnergy
     global gMaxNeibghors 
     global gEpoch        
     global gPersons      
     global gPersonsTotal 
     global gAllowLocalRes
+    global gMutationRate   
+    global gMutationFactor 
+    global gMutationMinStep
+    global gMutationTypeV  
 
     global gH,gW,layers, gDepth
 
@@ -853,10 +881,26 @@ def UnpackWorld(o):
         gEpoch          = o.gEpoch        
         gPersons        = o.gPersons
         gPersonsTotal   = o.gPersonsTotal 
-        gAllowLocalRes  = o.gAllowLocalRes
     except Exception as e:
         print('UnpackWorld ERR: '+ str(e))
         pass
+
+    # older versions
+    try:
+        gMutationRate   = o.gMutationRate   
+        gMutationFactor = o.gMutationFactor 
+        gMutationMinStep= o.gMutationMinStep
+        gMutationTypeV  = o.gMutationTypeV
+        gFailedBirthEnergy= o.gFailedBirthEnergy
+    except Exception as e:
+        gMutationRate   = 1
+        gMutationFactor = 3
+        gMutationMinStep= 1
+        gMutationTypeV  = T.mutExt
+        gFailedBirthEnergy = 0
+        print('Load Defaults 1: '+ str(e))
+        pass
+
 
     '''
     for key, value in o.__dict__.items():
