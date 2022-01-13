@@ -64,6 +64,7 @@ class T:
     # mutation range
     mutExt = 0  # depends on delta between current range and max/min available
     mutInt = 1  # depends only on current range +/- N% with fixed minimal step
+    mutNat = 2  # naturel - random around mean value of parents
 
 
 gDepth = L.layers
@@ -83,7 +84,9 @@ gIQ0 = True
 gMutationRate = 1
 gMutationFactor = 3
 gMutationMinStep = 5
-gMutationTypeV = 1
+gMutationTypeV = 2 # natural
+
+gParallel = 2
 
 gEpoch=0
 gPersons=0
@@ -118,6 +121,15 @@ def CrossGenes(xm, ym, xf, yf, layer):
 
     a = gMatrix[xm, ym, layer]
     b = gMatrix[xf, yf, layer]
+
+    if(gMutationTypeV == T.mutNat):
+        v0 = min(a, b)
+        v1 = max(a, b)
+        r = random.randint(v0-gMutationMinStep,v1+gMutationMinStep)
+        r = max(0, r)
+        r = min(r, 100)
+        return r
+
     r = random.randint(0,1)
     if(r == T.male):
         r = a
@@ -129,7 +141,7 @@ def CrossGenes(xm, ym, xf, yf, layer):
         v0 = min(a, b)
         v1 = max(a, b)
         if(gMutationTypeV == T.mutInt):
-            d = (int)(max((v1-v0)/gMutationFactor, 5))
+            d = (int)(max((v1-v0)/gMutationFactor, gMutationMinStep))
             r = random.randint(v0-d, v1+d)
         else:
             r = random.randint(int(v0-v0/gMutationFactor-1), int(v1+(100-v1)/gMutationFactor+1))
@@ -604,6 +616,52 @@ def _Next(x0, x1):
 from multiprocessing import Process, Pipe
 gStarted = False
 
+def f1(conn):
+    global gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal
+    global parent_conn
+    try:
+        parent_conn = conn
+        '''
+        gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal = conn.recv()
+        #s = conn.recv()
+        #print('got s')
+        #o = pickle.loads(s)
+        #print('unpacked s')
+        '''
+        o = conn.recv()
+        conn.send("Done")
+        print('Try unpack world')
+        bRet = UnpackWorld(o)
+        print(str(gW)+'x'+ str(gH))
+        if(not bRet):
+            print('Cant unpack world')
+            return
+
+        while(True):
+            #print(str(gEpoch))
+            #if(conn.poll()):
+            #    print('Exit request')
+            #    break
+
+            #print("read task")
+
+            _Next(0, gW)
+            #conn.send([gMatrix, gEpoch, gPersons, gPersonsTotal])
+            #o = PackWorld()
+            #conn.send(o)
+            conn.send(gMatrix)
+
+            print("update worker "+str(th))
+
+        #end while()
+
+    except Exception as e:
+        print('f ERR: '+ str(e))
+        time.sleep(60)
+    pass
+    return    
+#end f()
+
 def f(conn):
     global gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal
     global parent_conn
@@ -685,33 +743,53 @@ def NextLocked():
     global parent_conn1, child_conn1
     global parent_conn2, child_conn2
     global p1, p2, gStarted
+    global gParallel
+
+    if(gParallel == 0):
+        _Next(0, gW)
+        return
 
     bInit = not gStarted
 
     if(bInit):
         gPart = 0
-        parent_conn1, child_conn1 = Pipe()
-        parent_conn2, child_conn2 = Pipe()
-        p1 = Process(target=f, args=(parent_conn1,))
-        p1.start()
-        p2 = Process(target=f, args=(parent_conn2,))
-        p2.start()
-        '''
-        child_conn.send([gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal])
-        '''
-        o = PackWorld()
-        #s = pickle.dumps(o)
-        child_conn1.send(o)
-        child_conn2.send(o)
 
-        child_conn1.recv()
-        child_conn2.recv()
+        if(gParallel == 1):
+            parent_conn1, child_conn1 = Pipe()
+            p1 = Process(target=f1, args=(parent_conn1,))
+            p1.start()
+            o = PackWorld()
+            child_conn1.send(o)
+        else:
+            parent_conn1, child_conn1 = Pipe()
+            parent_conn2, child_conn2 = Pipe()
+            p1 = Process(target=f, args=(parent_conn1,))
+            p1.start()
+            p2 = Process(target=f, args=(parent_conn2,))
+            p2.start()
+            '''
+            child_conn.send([gMatrix, gW, gH, gEpoch, gPersons, gPersonsTotal])
+            '''
+            o = PackWorld()
+            #s = pickle.dumps(o)
+            child_conn1.send(o)
+            child_conn2.send(o)
 
-        NextTask()
+            child_conn1.recv()
+            child_conn2.recv()
+
+            NextTask()
         
         gStarted = True
     #end if(not gStarted)
 
+    if(gParallel == 1):
+        if(not p1.is_alive()):
+            return False
+
+        o = child_conn1.recv()
+        bRet = UnpackWorld(o)
+        return True
 
     if(not p1.is_alive() or not p2.is_alive()):
         return False
