@@ -104,6 +104,7 @@ def Load():
 
         chkZIQ_var.set( World.gIQ0          )
         chkLres_var.set(World.gAllowLocalRes)
+        print("IQ0="+str(World.gIQ0)+" LocalRes="+str(World.gAllowLocalRes))
 
     except Exception as e:
         print('ERR: '+ str(e))

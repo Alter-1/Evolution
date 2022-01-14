@@ -64,7 +64,7 @@ class T:
     # mutation range
     mutExt = 0  # depends on delta between current range and max/min available
     mutInt = 1  # depends only on current range +/- N% with fixed minimal step
-    mutNat = 2  # naturel - random around mean value of parents
+    mutNat = 2  # natural - random around mean value of parents
 
 
 gDepth = L.layers
@@ -83,7 +83,7 @@ gAllowLocalRes = False
 gIQ0 = True
 gMutationRate = 1
 gMutationFactor = 3
-gMutationMinStep = 5
+gMutationMinStep = 10
 gMutationTypeV = 2 # natural
 
 gParallel = 2
@@ -101,19 +101,19 @@ def WLock():
     global gWorldLock, nLockCounter
     nLockCounter += 1
     return gWorldLock.acquire(False)
-#end UILock()
+#end WLock()
 
 def WLockWait():
     global gWorldLock, nLockCounter
     nLockCounter += 1
     return gWorldLock.acquire(True)
-#end UILock()
+#end WLockWait()
 
 def WRelease():
     global gWorldLock, nLockCounter
     nLockCounter -= 1
     gWorldLock.release()
-#end UIRelease()
+#end WRelease()
 
 def CrossGenes(xm, ym, xf, yf, layer):
     global gMatrix
@@ -651,7 +651,7 @@ def f1(conn):
             #conn.send(o)
             conn.send(gMatrix)
 
-            print("update worker "+str(th))
+            print("update worker")
 
         #end while()
 
@@ -965,6 +965,7 @@ def UnpackWorld(o):
 
     # older versions
     try:
+        gAllowLocalRes  = o.gAllowLocalRes
         gMutationRate   = o.gMutationRate   
         gMutationFactor = o.gMutationFactor 
         gMutationMinStep= o.gMutationMinStep
