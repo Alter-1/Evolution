@@ -72,19 +72,23 @@ gW = 0
 gH = 0
 gMaxAge = 100
 gDiscoveryRate = 30
-gMaxIQres = 2
+gMaxIQres = 2           # maximum possible extra resources with 100% IQ
 gAttSz = 10
-gAttChildSz = 2
+gAttChildSz = 2         # children look up for adults in this range
 gChildAge = 10
 gBirthEnergy = 4
-gFailedBirthEnergy = 1
+gFailedBirthEnergy = 0
 gMaxNeibghors = 6
-gAllowLocalRes = False
-gIQ0 = True
-gMutationRate = 1
-gMutationFactor = 3
-gMutationMinStep = 10
-gMutationTypeV = 2 # natural
+gAllowLocalRes = False  # allow getting resources from own location, not only from free ones around
+gIQ0 = True             # initialize with all zeros (except of Share)
+gMutationRate = 1       # frequency of mutations, percents
+gMutationFactor = 3     # for gMutationTypeV 0 use 1/N of distance between min/max values and end of range, 0 and 100 respectively 
+                        #   as result range edges
+                        # for gMutationTypeV 1 use 1/N of distance between min/max values as result range edges, overriden by gMutationMinStep
+gMutationMinStep = 30   # not less than N points around parents min/max, for gMutationTypeV 1 and 2
+gMutationTypeV = 2      # 2=natural
+gMaxDamage = 1          # max possible amount of energy which can be aggressively taken from other person
+gMaxGroundRes   = 2     # how many resources try to fetch from free area
 
 gParallel = 2
 
@@ -119,15 +123,18 @@ def CrossGenes(xm, ym, xf, yf, layer):
     global gMatrix
     global gMutationRate, gMutationFactor, gMutationMinStep, gMutationTypeV
 
-    a = gMatrix[xm, ym, layer]
-    b = gMatrix[xf, yf, layer]
+    a = gMatrix.item((xm, ym, layer))
+    b = gMatrix.item((xf, yf, layer))
 
     if(gMutationTypeV == T.mutNat):
         v0 = min(a, b)
         v1 = max(a, b)
-        r = random.randint(v0-gMutationMinStep,v1+gMutationMinStep)
-        r = max(0, r)
-        r = min(r, 100)
+        m = random.randint(0,99)
+        if(m > gMutationRate):
+            d = 0
+        else:
+            d = gMutationMinStep
+        r = random.randint(max(0, v0-d),min(v1+d, 100))
         return r
 
     r = random.randint(0,1)
@@ -158,23 +165,28 @@ def CrossGenes(xm, ym, xf, yf, layer):
     return int(r)
 #end CrossGenes
 
+def actualChildAge(iq):
+    global gChildAge
+    return gChildAge + iq/25
+#end actualChildAge()
+
 def CreatePerson(x, y):
     global gMatrix, gPersons, gPersonsTotal
     global gIQ0
     gMatrix[x, y, L.ctype ] = T.person
-    gMatrix[x, y, L.energy] = random.randint(20,50)
+    gMatrix[x, y, L.energy] = random.randint(30,100)
     gMatrix[x, y, L.age   ] = 16
     gMatrix[x, y, L.sex   ] = random.randint(0,1)
     gMatrix[x, y, L.exp   ] = 0
 
     if(gIQ0):
-        gMatrix[x, y, L.share     ] = 0
+        gMatrix[x, y, L.share     ] = random.randint(0,100)
         gMatrix[x, y, L.aggressive] = 0
         gMatrix[x, y, L.iq        ] = 0
         gMatrix[x, y, L.defence   ] = 0
         gMatrix[x, y, L.mobility  ] = 0
     else:
-        gMatrix[x, y, L.share     ] = random.randint(0,10)
+        gMatrix[x, y, L.share     ] = random.randint(0,100)
         gMatrix[x, y, L.aggressive] = random.randint(0,100)
         gMatrix[x, y, L.iq        ] = random.randint(0,100)
         gMatrix[x, y, L.defence   ] = random.randint(0,100)
@@ -194,26 +206,30 @@ def CreateChild(x, y, xm, ym, xf, yf):
     gMatrix[x, y, L.age   ] = 0
     gMatrix[x, y, L.sex   ] = random.randint(0,1)
 
-    if(gMatrix[xf, yf, L.energy] < gBirthEnergy):
-        de = gMatrix[xf, yf, L.energy]
-    else:
+    de = gMatrix.item((xf, yf, L.energy))
+    if(de > gBirthEnergy):
         de = gBirthEnergy
 
-    gMatrix[x, y, L.energy] = random.randint(1,de)
+    #gMatrix[x, y, L.energy] = random.randint(1,de)
+    gMatrix[x, y, L.energy] = de
     gMatrix[xf, yf, L.energy] -= de
 
-    de = (gBirthEnergy * gMatrix[xm, ym, L.share]) / 200
-    if(gMatrix[xm, ym, L.energy] < de):
-        de = gMatrix[xm, ym, L.energy]/2
+    SHARE = random.randint(0,100)
+    if(SHARE < gMatrix.item((xm, ym, L.share))):
+        de = gBirthEnergy
+        em = gMatrix.item((xm, ym, L.energy))
+        if(em < de):
+            de = em/2
 
-    de = int(de)
-    gMatrix[xm, ym, L.energy] -= de
-    gMatrix[xf, yf, L.energy] += de
+        de = int(de)
+        gMatrix[xm, ym, L.energy] -= de
+        gMatrix[xf, yf, L.energy] += de
+    #end if(SHARE...)    
 
     for layer in range(L.genes, L.layers):
         gMatrix[x, y, layer     ] = CrossGenes(xm, ym, xf, yf, layer)
 
-    exp = (0 + gMatrix[xf, yf, L.exp] + gMatrix[xm, ym, L.exp]) * gMatrix[x, y, L.iq] / 200
+    exp = (0 + gMatrix.item((xf, yf, L.exp)) + gMatrix.item((xm, ym, L.exp))) * gMatrix.item((x, y, L.iq)) / 200
     if(exp > 100):
         print("high exp")
         exp = 100
@@ -238,18 +254,18 @@ def CreateMatrix(w, h, p):
 
 def HandleResources(x, y):
     global gMatrix, gW, gH, gMaxAge, gPersons
-    if(gMatrix[x,y, L.ctype] == T.ground):
-        if(gMatrix[x,y, L.resources] < 150):
-            gMatrix[x,y, L.resources] += 1
+    if(gMatrix.item((x,y, L.ctype)) == T.ground):
+        if(gMatrix.item((x,y, L.resources)) < 150):
+            gMatrix[x,y, L.resources] += 2
     else:
         #print("@"+str(x)+"x"+str(y))
         # die if no energy
-        if(gMatrix[x,y, L.age] >= gMaxAge or \
-           gMatrix[x,y, L.energy] < 1):
+        if(gMatrix.item((x,y, L.age)) >= gMaxAge or \
+           gMatrix.item((x,y, L.energy)) < 1):
             gMatrix[x,y, L.ctype] = T.ground
-            gMatrix[x,y, L.resources] = gMatrix[x,y, L.energy]
+            gMatrix[x,y, L.resources] = gMatrix.item((x,y, L.energy))
             gPersons -= 1
-            #print("Die sex/age/energy/iq total", gMatrix[x,y, L.sex], gMatrix[x,y, L.age], gMatrix[x,y, L.energy], gMatrix[x,y, L.iq], gPersons)
+            print("Die sex/age/energy/iq total", gMatrix[x,y, L.sex], gMatrix[x,y, L.age], gMatrix[x,y, L.energy], gMatrix[x,y, L.iq], gPersons)
             return
 
         gMatrix[x,y, L.age] += 1
@@ -259,16 +275,18 @@ def HandleResources(x, y):
 #end HandleResources()
 
 def FetchResources(x, y):
-    global gMatrix, gW, gH, gDiscoveryRate, gMaxIQres, gAllowLocalRes
+    global gMatrix, gW, gH, gDiscoveryRate, gMaxIQres, gAllowLocalRes, gMaxDamage, gMaxGroundRes
 
-    if(gMatrix[x,y, L.ctype] == T.ground):
+    if(gMatrix.item((x,y, L.ctype)) == T.ground):
         return
-    if(gMatrix[x,y, L.energy] > 250):
+    if(gMatrix.item((x,y, L.energy)) > 250):
         return
 
-    age = gMatrix[x,y, L.age]
-    iq = gMatrix[x,y, L.iq]
-    exp = gMatrix[x,y, L.exp]
+    age      = gMatrix.item((x,y, L.age))
+    iq       = gMatrix.item((x,y, L.iq))
+    exp      = gMatrix.item((x,y, L.exp))
+    mobility = gMatrix.item((x,y, L.mobility))
+
     r = random.randint(0,100)
     if(gDiscoveryRate > r):
         IQ = random.randint(0,100)
@@ -280,7 +298,7 @@ def FetchResources(x, y):
 
     if(gAllowLocalRes):
         # unconditionally get local resorces if any
-        if(gMatrix[x,y, L.resources] > 0):
+        if(gMatrix.item((x,y, L.resources)) > 0):
             gMatrix[x,y, L.energy] += 1
             gMatrix[x,y, L.resources] -= 1
     #end if(gAllowLocalRes)
@@ -288,11 +306,12 @@ def FetchResources(x, y):
     X=x
     Y=y
 
-    '''
-    n=1
+
+    n=6
+    bIsChild = age < actualChildAge(iq)
 
     while(X==x and Y==y and n>0):
-        d = 2+int(gMatrix[x,y, L.mobility]*2/100)
+        d = 2+int(mobility*2/100)
         ox = random.randint(0,d)
         oy = random.randint(0,d)
 
@@ -304,60 +323,89 @@ def FetchResources(x, y):
             n -= 1
             continue
 
-        if(age < gChildAge):
-            if(gMatrix[X,Y, L.ctype] == T.ground):
-                # children looks for adult
+        if(bIsChild):
+            #if(gMatrix.item((X,Y, L.ctype)) == T.ground or gMatrix.item((X,Y, L.age)) < actualChildAge(gMatrix.item((X,Y, L.iq)))):
+            if(gMatrix.item((X,Y, L.ctype)) == T.person and gMatrix.item((X,Y, L.age)) < actualChildAge(gMatrix.item((X,Y, L.iq)))):
+                # children looks for adult, and give extra chance
                 X=x
                 Y=y
+                n += 1
+            else:
+                break
         else:
-            break
+            if(gMatrix.item((X,Y, L.ctype)) == T.person and gMatrix.item((X,Y, L.age)) < actualChildAge(gMatrix.item((X,Y, L.iq)))):
+                # don't touch children
+                X=x
+                Y=y
+        #end if(bIsChild)
+        n -= 2
 
-        n -= 1
     #end while()
     '''
 
-    d = 2+int(gMatrix[x,y, L.mobility]*2/100)
+    d = 2+int(mobility*2/100)
     ox = random.randint(0,d)
     oy = random.randint(0,d)
 
     D = int(d/2)
     X = x+ox-D
     Y = y+oy-D
+    '''
 
     if(X==x and Y==y):
         return
-    if(X<0 or X>=gW or Y<0 or Y>=gW):
-        return
+#    if(X<0 or X>=gW or Y<0 or Y>=gH):
+#        return
 
     if(X>=0 and X<gW and Y>=0 and Y<gH):
-        if(gMatrix[X,Y, L.ctype] == T.ground):
+        if(gMatrix.item((X,Y, L.ctype)) == T.ground):
 
             '''
             IQ = random.randint(0,100)
             if(iq+exp < IQ):
                 return
             '''
-            dr = int((iq+exp)*gMaxIQres/100+1)
-            dr = min(gMatrix[X,Y, L.resources], dr)
+            #dr = int((iq+exp)*gMaxIQres/100+1)
+            dr0 = gMaxGroundRes
+            dr = 0
+            if(iq+exp > 0):
+                DR = random.randint(0, 200)
+                if(DR < iq+exp):
+                    dr = random.randint(1, gMaxIQres)
 
-            if(gMatrix[X,Y, L.resources] >= 1):
-                gMatrix[X,Y, L.resources] -= 1
+            dr = min(gMatrix.item((X,Y, L.resources)), dr+dr0)
+
+            if(gMatrix.item((X,Y, L.resources)) >= dr0):
+                gMatrix[X,Y, L.resources] -= dr0
                 gMatrix[x,y, L.energy] += dr
+                if(gMatrix.item((x,y, L.energy)) > 250-gMaxIQres):
+                    gMatrix[x,y, L.energy] = 250-gMaxIQres
         else:
-            SHARE = random.randint(0,100)
-            if(gMatrix[X,Y, L.share] > SHARE or age < gChildAge):
-                gMatrix[X,Y, L.energy] -= 1
-                gMatrix[x,y, L.energy] += 1
+            if(bIsChild):
+                de = min(2, gMatrix.item((X,Y, L.energy)))
+                gMatrix[X,Y, L.energy] -= de
+                gMatrix[x,y, L.energy] += de
+            else:
+                SHARE = random.randint(0,100)
+                if(gMatrix.item((X,Y, L.share)) > SHARE):
+                    de = min(1, gMatrix.item((X,Y, L.energy)))
+                    gMatrix[X,Y, L.energy] -= de
+                    gMatrix[x,y, L.energy] += de
 #                return
 
             AGGR = random.randint(0,100)
-            if(gMatrix[x,y, L.aggressive] * (1 + iq/10) < AGGR):
+            if(gMatrix.item((x,y, L.aggressive)) * (1 + iq/10) <= AGGR):
                 return
 
             DEFENCE = random.randint(0,100)
-            if(gMatrix[X,Y, L.defence] * (1 + iq/10)  < DEFENCE):
-                gMatrix[X,Y, L.energy] -= 1
-                gMatrix[x,y, L.energy] += 1
+            if(gMatrix.item((X,Y, L.defence)) * (1 + iq/10)  <= DEFENCE):
+                if(gMaxDamage > 1):
+                    de = random.randint(1,gMaxDamage)
+                else:
+                    de = 1
+                de = min(de, gMatrix.item((X,Y, L.energy)))
+                gMatrix[X,Y, L.energy] -= de
+                gMatrix[x,y, L.energy] += de
                 return
         #end if(L.ctype)
 
@@ -403,7 +451,7 @@ def CountNeibghors(x, y):
         for yi in range(y0, y1):
             if(xi==x and yi==y):
                 continue
-            if(gMatrix[xi,yi, L.ctype] == T.person):
+            if(gMatrix.item((xi,yi, L.ctype)) == T.person):
                 N += 1
     #end for(x, y)
 
@@ -414,9 +462,9 @@ def CountNeibghors(x, y):
 def CountAttractionPoint(x, y):
     global gMatrix, gW, gH, gAttSz, gAttChildSz, gMaxNeibghors
 
-    if(gMatrix[x,y, L.ctype] == T.ground):
+    if(gMatrix.item((x,y, L.ctype)) == T.ground):
         return
-    if(gMatrix[x,y, L.energy] < 2):
+    if(gMatrix.item((x,y, L.energy)) < 2):
         return
 
     bFindRes = False    
@@ -426,7 +474,7 @@ def CountAttractionPoint(x, y):
     if(N == 8):
         return  # no chance
 
-    if(gMatrix[x,y, L.mobility] > MOB):
+    if(gMatrix.item((x,y, L.mobility)) > MOB):
         # high mobility, look for resources
         if(N < gMaxNeibghors):
             # few neighbors, stay here
@@ -438,9 +486,10 @@ def CountAttractionPoint(x, y):
             # too many neighbors, look for free resources
             bFindRes = True
 
-    sex = gMatrix[x,y, L.sex]
-    age = gMatrix[x,y, L.age]
-    if(age < gChildAge):
+    sex = gMatrix.item((x,y, L.sex))
+    age = gMatrix.item((x,y, L.age))
+    iq  = gMatrix.item((x,y, L.iq))
+    if(age < actualChildAge(iq)):
         sz = gAttChildSz
     else:
         sz = gAttSz
@@ -458,15 +507,15 @@ def CountAttractionPoint(x, y):
 
     for xi in range(x0, x1):
         for yi in range(y0, y1):
-            if(gMatrix[xi,yi, L.ctype] == T.ground):
+            if(gMatrix.item((xi,yi, L.ctype)) == T.ground):
                 ResXsum += xi
                 ResYsum += yi
                 ResN += 1
                 continue
             if(xi == x and yi == y):
                 continue
-            if(age >= gChildAge):
-                if(gMatrix[xi,yi, L.sex] == sex):
+            if(age >= actualChildAge(iq)):
+                if(gMatrix.item((xi,yi, L.sex)) == sex):
                     continue
             AttXsum += xi
             AttYsum += yi
@@ -505,9 +554,9 @@ def CountAttractionPoint(x, y):
     if(xi<0 or yi<0 or xi>=gW or yi>=gH):
         return
     
-    if(gMatrix[xi,yi, L.ctype] == T.person):
+    if(gMatrix.item((xi,yi, L.ctype)) == T.person):
         return
-    savedRes = gMatrix[xi,yi, L.resources]
+    savedRes = gMatrix.item((xi,yi, L.resources))
 
     gMatrix[xi,yi] = gMatrix[x,y]
     gMatrix[x,y, L.ctype] = T.ground
@@ -520,11 +569,11 @@ def MakeChildren(x, y):
 
     if(gMatrix[x,y, L.ctype] == T.ground):
         return
-    if(gMatrix[x,y, L.energy] < gBirthEnergy):
+    if(gMatrix[x,y, L.energy] < gBirthEnergy*2):
         return
     if(gMatrix[x,y, L.sex] == T.male):
         return
-    if(gMatrix[x,y, L.age] < gChildAge + gMatrix[x,y, L.iq]/25):
+    if(gMatrix.item((x,y, L.age)) < actualChildAge(gMatrix.item((x,y, L.iq)))):
         return
 
     sz = 1
@@ -539,7 +588,7 @@ def MakeChildren(x, y):
     for xi in range(x0, x1):
         for yi in range(y0, y1):
             if(xt == -1):
-                if(gMatrix[xi,yi, L.ctype] == T.ground):
+                if(gMatrix.item((xi,yi, L.ctype)) == T.ground):
                     xt = xi
                     yt = yi
                     continue
@@ -548,10 +597,10 @@ def MakeChildren(x, y):
                 continue
             if(gMatrix[xi,yi, L.sex] == T.female):
                 continue
-            if(gMatrix[xi,yi, L.age] < gAttChildSz + gMatrix[xi,yi, L.iq]/25):
+            if(gMatrix[xi,yi, L.age] < gAttChildSz + gMatrix.item((xi,yi, L.iq))/25):
                 continue
 
-            fert = 1 * gMatrix[x, y, L.fert] * gMatrix[xi, yi, L.fert]
+            fert = gMatrix.item((x, y, L.fert)) * gMatrix.item((xi, yi, L.fert))
             if( fert < random.randint(1,100*100)):
                 continue
 
@@ -875,6 +924,8 @@ def PackWorld():
     global gMutationFactor 
     global gMutationMinStep
     global gMutationTypeV  
+    global gMaxDamage
+    global gMaxGroundRes
     
     #print("matrix=>"+str(gMatrix))
 
@@ -901,6 +952,8 @@ def PackWorld():
     o.gMutationFactor = gMutationFactor 
     o.gMutationMinStep= gMutationMinStep
     o.gMutationTypeV  = gMutationTypeV
+    o.gMaxDamage      = gMaxDamage
+    o.gMaxGroundRes   = gMaxGroundRes
 
     '''
     for key, value in o.__dict__.items():
@@ -930,6 +983,8 @@ def UnpackWorld(o):
     global gMutationFactor 
     global gMutationMinStep
     global gMutationTypeV  
+    global gMaxDamage
+    global gMaxGroundRes
 
     global gH,gW,layers, gDepth
 
@@ -963,7 +1018,7 @@ def UnpackWorld(o):
         print('UnpackWorld ERR: '+ str(e))
         pass
 
-    # older versions
+    # newer versions
     try:
         gAllowLocalRes  = o.gAllowLocalRes
         gMutationRate   = o.gMutationRate   
@@ -980,6 +1035,15 @@ def UnpackWorld(o):
         print('Load Defaults 1: '+ str(e))
         pass
 
+    # newer versions
+    try:
+        gMaxDamage      = 1
+        gMaxGroundRes   = 1
+        gMaxDamage      = o.gMaxDamage
+        gMaxGroundRes   = o.gMaxGroundRes
+    except Exception as e:
+        print('Load Defaults 2: '+ str(e))
+        pass
 
     '''
     for key, value in o.__dict__.items():

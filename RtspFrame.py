@@ -4,6 +4,8 @@ import World
 from World import L
 from World import T
 
+import math
+
 from tkinter import *
 from tkinter import ttk
 from ttkthemes import ThemedTk
@@ -116,7 +118,7 @@ class VideoCaptureDaemon(threading.Thread):
         self.h = h
         self.data = np.zeros((self.w*2, self.h*2, 3), dtype=np.uint8)
         #self.data[0:256, 0:256] = [255, 0, 0] # red patch in upper left
-        World.CreateMatrix(w, h, 2500)
+        World.CreateMatrix(w, h, 4500)
 
         self.daemon = SimThread()
         #self.daemon.start()
@@ -142,39 +144,46 @@ class VideoCaptureDaemon(threading.Thread):
 #            for y in range(self.h):
 
         x = 0
-        for ax in lMatrix:
-        #while(x<self.w):
+        #for ax in lMatrix:
+        while(x<self.w):
             y = 0
-            for lItem in ax:
-            #while(y<self.h):
+            #for lItem in ax:
+            while(y<self.h):
 
                 g = 0
                 r = 0
                 b = 0
 
                 #lItem = lMatrix[x,y]
+                sex = lMatrix.item((x,y, L.sex))
+                age = lMatrix.item((x,y, L.age))
+                ctype = lMatrix.item((x,y, L.ctype))
 
                 if(self.mode == 0 or self.mode == L.age):
 
-                    if(lItem[L.ctype] == T.ground):
-                        g = 50+int(lItem[L.resources]*1.5)
+                    #if(lItem[L.ctype] == T.ground):
+                    if(ctype == T.ground):
+                        #g = 50+int(lItem[L.resources]*1.5)
+                        g = 50+int(lMatrix.item((x,y, L.resources))*1.2)  # 0-150
                     else:
                         #print("@"+str(x)+"x"+str(y))
                         
-                        if(lItem[L.sex] == T.male):
-                            b = 250-lItem[L.age]*2
+                        #if(lItem[L.sex] == T.male):
+                        if(sex == T.male):
+                            b = 250-age*2
                         else:
-                            r = 250-lItem[L.age]*2
+                            r = 250-age*2
                         
-                        g = 50 + int(lItem[L.energy]*1.5)
+                        g = 50 + math.log(1+lMatrix.item((x,y, L.energy)))*36   # 0-250
                 
                 #if(self.mode > L.age):
                 else:
-                    if(lItem[L.ctype] == T.person):
+                    if(ctype == T.person):
 
-                        v = lItem[self.mode]*2
+                        #v = lItem[self.mode]*2
+                        v = lMatrix.item((x,y, self.mode))*2
                         
-                        if(lItem[L.sex] == T.male):
+                        if(sex == T.male):
                             b = 50+v
                         else:
                             r = 50+v
@@ -183,10 +192,11 @@ class VideoCaptureDaemon(threading.Thread):
 
 
                 rgb = [r, g, b]
-                self.data[x*2,y*2] = rgb
-                self.data[x*2+1,y*2] = rgb
-                self.data[x*2,y*2+1] = rgb
-                self.data[x*2+1,y*2+1] = rgb
+                self.data[x*2:x*2+2,y*2:y*2+2] = rgb
+                #self.data[x*2,y*2] = rgb
+                #self.data[x*2+1,y*2] = rgb
+                #self.data[x*2,y*2+1] = rgb
+                #self.data[x*2+1,y*2+1] = rgb
 
                 y+=1
             #end for y
