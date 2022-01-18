@@ -93,6 +93,7 @@ gMutationMinStep = 30   # not less than N points around parents min/max, for gMu
 gMutationTypeV = 2      # 2=natural
 gMaxDamage = 1          # max possible amount of energy which can be aggressively taken from other person
 gMaxGroundRes   = 2     # how many resources try to fetch from free area
+gResRespawn     = 2     # max ground resource respawn
 
 gParallel = 2
 
@@ -265,10 +266,10 @@ def CreateMatrix(w, h, p):
 #end CreateMatrix()
 
 def HandleResources(x, y):
-    global gMatrix, gW, gH, gMaxAge, gPersons
+    global gMatrix, gW, gH, gMaxAge, gPersons, gResRespawn
     if(gMatrix.item((x,y, L.ctype)) == T.ground):
         if(gMatrix.item((x,y, L.resources)) < 150):
-            gMatrix[x,y, L.resources] += 2
+            gMatrix[x,y, L.resources] += random.randint(0,gResRespawn)
     else:
         #print("@"+str(x)+"x"+str(y))
         # die if no energy
@@ -287,11 +288,12 @@ def HandleResources(x, y):
 #end HandleResources()
 
 def FetchResources(x, y):
-    global gMatrix, gW, gH, gDiscoveryRate, gMaxIQres, gAllowLocalRes, gMaxDamage, gMaxGroundRes
+    global gMatrix, gW, gH, gDiscoveryRate, gMaxIQres, gAllowLocalRes, gMaxDamage, gMaxGroundRes, gBirthEnergy
 
     if(gMatrix.item((x,y, L.ctype)) == T.ground):
         return
-    if(gMatrix.item((x,y, L.energy)) > 250):
+    energy = gMatrix.item((x,y, L.energy))
+    if(energy > 250):
         return
 
     age      = gMatrix.item((x,y, L.age))
@@ -379,6 +381,9 @@ def FetchResources(x, y):
             '''
             #dr = int((iq+exp)*gMaxIQres/100+1)
             dr0 = gMaxGroundRes
+            if(energy < gBirthEnergy and not bIsChild):
+                dr0 += int(gBirthEnergy/2)
+
             dr = 0
             if(iq+exp > 0):
                 DR = random.randint(0, 200)
@@ -938,6 +943,7 @@ def PackWorld():
     global gMutationTypeV  
     global gMaxDamage
     global gMaxGroundRes
+    global gResRespawn
     
     #print("matrix=>"+str(gMatrix))
 
@@ -966,6 +972,7 @@ def PackWorld():
     o.gMutationTypeV  = gMutationTypeV
     o.gMaxDamage      = gMaxDamage
     o.gMaxGroundRes   = gMaxGroundRes
+    o.gResRespawn     = gResRespawn
 
     '''
     for key, value in o.__dict__.items():
@@ -997,6 +1004,7 @@ def UnpackWorld(o):
     global gMutationTypeV  
     global gMaxDamage
     global gMaxGroundRes
+    global gResRespawn
 
     global gH,gW,layers, gDepth
 
@@ -1062,8 +1070,10 @@ def UnpackWorld(o):
     try:
         gMaxDamage      = 1
         gMaxGroundRes   = 1
+        gResRespawn     = 2
         gMaxDamage      = o.gMaxDamage
         gMaxGroundRes   = o.gMaxGroundRes
+        gResRespawn     = o.gResRespawn
     except Exception as e:
         print('Load Defaults 2: '+ str(e))
         pass
