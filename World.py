@@ -33,7 +33,10 @@ class L:
     mobility  = 10
     fert      = 11
 
-    layers    = 12
+    pseudo_genes = 12 # marker
+    color     = 12
+
+    layers    = 13
 
 LayerName = [
     "resources ",
@@ -51,6 +54,7 @@ LayerName = [
     "defence   ",
     "mobility  ",
     "fert      ",
+    "color     ",
                 
     "layers    "]
 
@@ -171,7 +175,7 @@ def actualChildAge(iq):
 #end actualChildAge()
 
 def CreatePerson(x, y):
-    global gMatrix, gPersons, gPersonsTotal
+    global gMatrix, gPersons, gPersonsTotal, gH, gW
     global gIQ0
     gMatrix[x, y, L.ctype ] = T.person
     gMatrix[x, y, L.energy] = random.randint(30,100)
@@ -192,6 +196,8 @@ def CreatePerson(x, y):
         gMatrix[x, y, L.defence   ] = random.randint(0,100)
         gMatrix[x, y, L.mobility  ] = random.randint(0,100)
     gMatrix[x, y, L.fert      ] = random.randint(0,100)
+    # marker pseudo-gene
+    gMatrix[x, y, L.color] = int(y/gH * 16)*16 + int(x/gW * 16)
 
     gPersons += 1
     gPersonsTotal += 1
@@ -226,8 +232,9 @@ def CreateChild(x, y, xm, ym, xf, yf):
         gMatrix[xf, yf, L.energy] += de
     #end if(SHARE...)    
 
-    for layer in range(L.genes, L.layers):
+    for layer in range(L.genes, L.pseudo_genes):
         gMatrix[x, y, layer     ] = CrossGenes(xm, ym, xf, yf, layer)
+    gMatrix[x, y, L.color] = ( gMatrix.item((xm, ym, L.color)) + gMatrix.item((xf, yf, L.color)) ) / 2
 
     exp = (0 + gMatrix.item((xf, yf, L.exp)) + gMatrix.item((xm, ym, L.exp))) * gMatrix.item((x, y, L.iq)) / 200
     if(exp > 100):
@@ -989,8 +996,8 @@ def UnpackWorld(o):
     global gH,gW,layers, gDepth
 
     H,W,layers    = o.gMatrix.shape
-    if(layers != gDepth):
-        print('layers != gDepth')
+    if(layers > gDepth):
+        print('layers > gDepth')
         gWorldLock.release()
         return False
 
@@ -1000,7 +1007,13 @@ def UnpackWorld(o):
     #gMatrix = np.zeros((W, H, gDepth), dtype=np.uint8)
 
     try:
-        gMatrix         = o.gMatrix
+        if(layers == gDepth):
+            gMatrix         = o.gMatrix
+        else:
+            print('layers != gDepth')
+            CreateMatrix(W, H, 0)
+            gMatrix[0:x,0:y, i:layers] = o.gMatrix[0:x,0:y, i:layers]
+
         #gMatrix[:]      = o.gMatrix
         #gMatrix         = np.copy(o.gMatrix)
         gMaxAge         = o.gMaxAge       

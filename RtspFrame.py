@@ -159,6 +159,13 @@ class VideoCaptureDaemon(threading.Thread):
                 age = lMatrix.item((x,y, L.age))
                 ctype = lMatrix.item((x,y, L.ctype))
 
+                if(self.mode == L.color):
+                    if(ctype == T.person):
+                        color = lMatrix.item((x,y, L.color))
+                        r = 63 + int(((color & 0xe0) / 256) * 192)
+                        g = 63 + int(((color & 0x18) / 32 ) * 192)
+                        b = 63 + int(((color & 0x07)      ) * 192)
+                
                 if(self.mode == 0 or self.mode == L.age):
 
                     #if(lItem[L.ctype] == T.ground):

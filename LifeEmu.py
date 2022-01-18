@@ -171,12 +171,13 @@ if __name__ == "__main__" :
     btAge   = ttk.Button(commonframe, text = "Age/energy", command = lambda: SetMode(L.age   )).grid(column = 1, row = 1,sticky=W, padx=8, pady=5)
     btEnergy= ttk.Button(commonframe, text = "Energy",     command = lambda: SetMode(L.energy)).grid(column = 2, row = 1,sticky=W, padx=8, pady=5)
     btExp   = ttk.Button(commonframe, text = "Exp",        command = lambda: SetMode(L.exp   )).grid(column = 3, row = 1,sticky=W, padx=8, pady=5)
+    btColor = ttk.Button(commonframe, text = "Color",      command = lambda: SetMode(L.color )).grid(column = 4, row = 1,sticky=W, padx=8, pady=5)
 
     lbEpoch = ttk.Label(commonframe, text="-")
-    lbEpoch.grid(column = 4, row = 1)
+    lbEpoch.grid(column = 5, row = 1)
 
     lbVis = ttk.Label(commonframe, text="")
-    lbVis.grid  (column = 5, row = 1)
+    lbVis.grid  (column = 6, row = 1)
 
     btSahre = ttk.Button(commonframe, text = "Share", command = lambda: SetMode(L.share     )).grid( column = 1, row = 2,sticky=W, padx=8, pady=5)
     btAgg   = ttk.Button(commonframe, text = "Aggr",  command = lambda: SetMode(L.aggressive)).grid( column = 2, row = 2,sticky=W, padx=8, pady=5)
