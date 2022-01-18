@@ -167,12 +167,17 @@ def CrossGenes(xm, ym, xf, yf, layer):
     r = min(r, 100)
     '''
     return int(r)
-#end CrossGenes
+#end CrossGenes()
 
 def actualChildAge(iq):
     global gChildAge
     return gChildAge + iq/25
 #end actualChildAge()
+
+def makeColor(x,y):
+    global gH, gW
+    return int(y/gH * 16)*16 + int(x/gW * 16)
+#end makeColor()
 
 def CreatePerson(x, y):
     global gMatrix, gPersons, gPersonsTotal, gH, gW
@@ -197,7 +202,7 @@ def CreatePerson(x, y):
         gMatrix[x, y, L.mobility  ] = random.randint(0,100)
     gMatrix[x, y, L.fert      ] = random.randint(0,100)
     # marker pseudo-gene
-    gMatrix[x, y, L.color] = int(y/gH * 16)*16 + int(x/gW * 16)
+    gMatrix[x, y, L.color] = makeColor(x,y)
 
     gPersons += 1
     gPersonsTotal += 1
@@ -234,7 +239,7 @@ def CreateChild(x, y, xm, ym, xf, yf):
 
     for layer in range(L.genes, L.pseudo_genes):
         gMatrix[x, y, layer     ] = CrossGenes(xm, ym, xf, yf, layer)
-    gMatrix[x, y, L.color] = ( gMatrix.item((xm, ym, L.color)) + gMatrix.item((xf, yf, L.color)) ) / 2
+    gMatrix[x, y, L.color] = int(( gMatrix.item((xm, ym, L.color)) + gMatrix.item((xf, yf, L.color)) ) / 2)
 
     exp = (0 + gMatrix.item((xf, yf, L.exp)) + gMatrix.item((xm, ym, L.exp))) * gMatrix.item((x, y, L.iq)) / 200
     if(exp > 100):
@@ -1012,7 +1017,12 @@ def UnpackWorld(o):
         else:
             print('layers != gDepth')
             CreateMatrix(W, H, 0)
-            gMatrix[0:x,0:y, i:layers] = o.gMatrix[0:x,0:y, i:layers]
+            gMatrix[0:W,0:H, 0:layers] = o.gMatrix[0:W,0:H, 0:layers]
+            if(layers <= L.color):
+                for x in range(gW):
+                    for y in range(gH):
+                        if( gMatrix.item((x,y, L.ctype)) == T.person):
+                            gMatrix[x, y, L.color] = makeColor(x,y)
 
         #gMatrix[:]      = o.gMatrix
         #gMatrix         = np.copy(o.gMatrix)
