@@ -601,17 +601,58 @@ def MakeChildren(x, y):
 def DoStage(StageF, x0, x1):
     global gMatrix, gW, gH, gEpoch
     global bStop
-    x = x0
-    while(x<x1):
-        y = 0
-        while(y<gH):
-            if(bStop):
-                return
-            StageF(x, y)
-            y+=1
-        #end while(y)
-        x+=1
-    #end while(x)
+
+    way = gEpoch & 0x3
+
+    if(way == 0):
+        x = x0
+        while(x<x1):
+            y = 0
+            while(y<gH):
+                if(bStop):
+                    return
+                StageF(x, y)
+                y+=1
+            #end while(y)
+            x+=1
+        #end while(x)
+    elif(way == 1):
+        x = x1-1
+        while(x>=x0):
+            y = 0
+            while(y<gH):
+                if(bStop):
+                    return
+                StageF(x, y)
+                y+=1
+            #end while(y)
+            x-=1
+        #end while(x)
+    elif(way == 2):
+        x = x0
+        while(x<x1):
+            y = gH-1
+            while(y>=0):
+                if(bStop):
+                    return
+                StageF(x, y)
+                y-=1
+            #end while(y)
+            x+=1
+        #end while(x)
+    elif(way == 3):
+        x = x1-1
+        while(x>=x0):
+            y = gH-1
+            while(y>=0):
+                if(bStop):
+                    return
+                StageF(x, y)
+                y-=1
+            #end while(y)
+            x-=1
+        #end while(x)
+
 #end DoStage()
 
 def _Next(x0, x1):
