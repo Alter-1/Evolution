@@ -278,7 +278,7 @@ def HandleResources(x, y):
             gMatrix[x,y, L.ctype] = T.ground
             gMatrix[x,y, L.resources] = gMatrix.item((x,y, L.energy))
             gPersons -= 1
-            print("Die sex/age/energy/iq total", gMatrix[x,y, L.sex], gMatrix[x,y, L.age], gMatrix[x,y, L.energy], gMatrix[x,y, L.iq], gPersons)
+            #print("Die sex/age/energy/iq total", gMatrix[x,y, L.sex], gMatrix[x,y, L.age], gMatrix[x,y, L.energy], gMatrix[x,y, L.iq], gPersons)
             return
 
         gMatrix[x,y, L.age] += 1
@@ -602,6 +602,8 @@ def MakeChildren(x, y):
     xt = -1
     yt = -1
 
+    partners = []
+
     for xi in range(x0, x1):
         for yi in range(y0, y1):
             if(xt == -1):
@@ -624,14 +626,28 @@ def MakeChildren(x, y):
             if(X == -1):
                 X = xi
                 Y = yi
-                if(not xt == -1):
-                    break
+                partners.append([X, Y])
+                #if(not xt == -1):
+                #    break
 
-    if(X == -1):  # no partner
+        #end for yi
+    #end for xi
+
+    #if(X == -1):  # no partner
+    #    return
+    n = len(partners)
+    if(n == 0):
         return
+
     if(xt == -1): # failed birth, not free place
         gMatrix[x,y, L.energy] -= gFailedBirthEnergy
         return
+
+    if(n>1):
+        n = random.randint(0, n)
+    else:
+        n = 0
+    X, Y = partners[n]
 
     # target, male, female
     CreateChild(xt, yt, X, Y, x, y)
