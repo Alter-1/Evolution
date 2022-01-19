@@ -548,14 +548,19 @@ def MakeChildren(x, y):
     yt = -1
 
     partners = []
+    places = []
+
+    xi = x0
+    yi = y0
 
     for xi in range(x0, x1):
         for yi in range(y0, y1):
-            if(xt == -1):
-                if(gMatrix.item((xi,yi, L.ctype)) == T.ground):
-                    xt = xi
-                    yt = yi
-                    continue
+            #if(xt == -1):
+            if(gMatrix.item((xi,yi, L.ctype)) == T.ground):
+                xt = xi
+                yt = yi
+                places.append([xt,yt])
+                continue
 
             if(xi == x and yi == y):
                 continue
@@ -568,31 +573,38 @@ def MakeChildren(x, y):
             if( fert < random.randint(1,100*100)):
                 continue
 
-            if(X == -1):
-                X = xi
-                Y = yi
-                partners.append([X, Y])
+#            if(X == -1):
+            X = xi
+            Y = yi
+            partners.append([X, Y])
                 #if(not xt == -1):
                 #    break
 
         #end for yi
     #end for xi
 
-    #if(X == -1):  # no partner
-    #    return
-    n = len(partners)
-    if(n == 0):
+    if(X == -1):  # no partner
         return
 
     if(xt == -1): # failed birth, not free place
         gMatrix[x,y, L.energy] -= gFailedBirthEnergy
         return
 
+    n = len(partners)
+    m = len(places)
+
     if(n>1):
-        n = random.randint(0, n)
+        n = random.randint(0, n-1)
     else:
         n = 0
+
+    if(m>1):
+        m = random.randint(0, m-1)
+    else:
+        m = 0
+
     X, Y = partners[n]
+    xt, yt = places[m]
 
     # target, male, female
     CreateChild(xt, yt, X, Y, x, y)
@@ -602,56 +614,42 @@ def DoStage(StageF, x0, x1):
     global gMatrix, gW, gH, gEpoch
     global bStop
 
-    way = gEpoch & 0x3
+    if(gEpoch & 0x1):
+        _x0 = x0
+        _x1 = x1
+        _dx = 1
+    else:
+        _x0 = x1-1
+        _x1 = x0-1
+        _dx = -1
 
-    if(way == 0):
-        x = x0
-        while(x<x1):
-            y = 0
-            while(y<gH):
+    if(gEpoch & 0x2):
+        _y0 = 0
+        _y1 = gH
+        _dy = 1
+    else:
+        _y0 = gH-1
+        _y1 = -1
+        _dy = -1
+
+    x = _x0
+    y = _y0
+    try:
+        x = _x0
+        while(not (x==_x1)):
+            y = _y0
+            while(not (y==_y1)):
                 if(bStop):
                     return
                 StageF(x, y)
-                y+=1
+                y+=_dy
             #end while(y)
-            x+=1
+            x+=_dx
         #end while(x)
-    elif(way == 1):
-        x = x1-1
-        while(x>=x0):
-            y = 0
-            while(y<gH):
-                if(bStop):
-                    return
-                StageF(x, y)
-                y+=1
-            #end while(y)
-            x-=1
-        #end while(x)
-    elif(way == 2):
-        x = x0
-        while(x<x1):
-            y = gH-1
-            while(y>=0):
-                if(bStop):
-                    return
-                StageF(x, y)
-                y-=1
-            #end while(y)
-            x+=1
-        #end while(x)
-    elif(way == 3):
-        x = x1-1
-        while(x>=x0):
-            y = gH-1
-            while(y>=0):
-                if(bStop):
-                    return
-                StageF(x, y)
-                y-=1
-            #end while(y)
-            x-=1
-        #end while(x)
+    except Exception as e:
+        print('DoStage ERR: '+ str(e) + " @"+str(x)+"x"+str(y))
+        #print(str(x)+","+str(y))
+        time.sleep(60)
 
 #end DoStage()
 
