@@ -5,6 +5,12 @@ rm ./build.ok
 a=`pip show cython | grep Version 1>/dev/null`
 if [ "x$a" ] ; then
   pip install cython
+  pip install setuptools
+fi
+
+a=`pip show ttkthemes | grep Version 1>/dev/null`
+if [ "x$a" ] ; then
+  call preinstall.csh
 fi
 
 python setup.py build_ext --inplace 

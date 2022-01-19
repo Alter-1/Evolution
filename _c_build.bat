@@ -5,11 +5,22 @@ del "%PATH_SRC%\build.ok"
 pip show cython | findstr "Version" 1>nul
 if errorlevel 1 (  
   pip install cython
+  pip install setuptools
 ) else (
   goto :ok
 )
-
 :ok
+
+pip show ttkthemes | findstr "Version" 1>nul
+if errorlevel 1 (  
+  pip install ttkthemes
+  pip install numpy
+  pip install Pillow
+) else (
+  goto :ok1
+)
+
+:ok1
 set VS90COMNTOOLS=%VS140COMNTOOLS%
 
 python setup.py build_ext --inplace 
