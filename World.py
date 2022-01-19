@@ -5,84 +5,22 @@ import time
 import threading
 
 from multiprocessing import Process, Pipe
+from WorldConst import *
 
 class Empty:
     pass        
 
-gMatrix = None
-'''
-0 - resources
-1 - type
-2 - energy
-3 - 
-'''
-class L:
-    resources = 0
-    ctype     = 1
-    energy    = 2
-    age       = 3
-    sex       = 4
-    exp       = 5
+######################## Settings #############################
 
-    genes     = 6 # marker
-
-    share     = 6
-    aggressive= 7
-    iq        = 8
-    defence   = 9
-    mobility  = 10
-    fert      = 11
-
-    pseudo_genes = 12 # marker
-    color     = 12
-
-    layers    = 13
-
-LayerName = [
-    "resources ",
-    "ctype     ",
-    "energy    ",
-    "age       ",
-    "sex       ",
-    "exp       ",
-                
-    #"genes     ",
-                
-    "share     ",
-    "aggressive",
-    "iq        ",
-    "defence   ",
-    "mobility  ",
-    "fert      ",
-    "color     ",
-                
-    "layers    "]
-
-class T:
-    ground = 0
-    person = 1
-
-    male = 0
-    female = 1
-
-    # mutation range
-    mutExt = 0  # depends on delta between current range and max/min available
-    mutInt = 1  # depends only on current range +/- N% with fixed minimal step
-    mutNat = 2  # natural - random around mean value of parents
-
-
-gDepth = L.layers
-gW = 0
-gH = 0
 gMaxAge = 100
-gDiscoveryRate = 30
+gDiscoveryRate = 30     # rate of discoveries those adds extar energy and grow experience, percents
 gMaxIQres = 2           # maximum possible extra resources with 100% IQ
-gAttSz = 10
+gAttSz = 10             # look for partner and/or free spae or energy source in this range
 gAttChildSz = 2         # children look up for adults in this range
-gChildAge = 10
+gChildAge = 10          # before this age children require extra energy from parents and cannot create own ones
 gBirthEnergy = 4
 gFailedBirthEnergy = 0
-gMaxNeibghors = 6
+gMaxNeibghors = 6       # don't create children when number of neibghors reaches this limit and look for free space if possible
 gAllowLocalRes = False  # allow getting resources from own location, not only from free ones around
 gIQ0 = True             # initialize with all zeros (except of Share)
 gMutationRate = 1       # frequency of mutations, percents
@@ -96,6 +34,13 @@ gMaxGroundRes   = 2     # how many resources try to fetch from free area
 gResRespawn     = 2     # max ground resource respawn
 
 gParallel = 2
+
+##################### End of Settings ##########################
+
+gMatrix = None
+gDepth = L.layers
+gW = 0
+gH = 0
 
 gEpoch=0
 gPersons=0
@@ -695,7 +640,6 @@ def _Next(x0, x1):
     return    
 #end _Next()
 
-from multiprocessing import Process, Pipe
 gStarted = False
 
 def f1(conn):

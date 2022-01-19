@@ -4,10 +4,28 @@ World.py - engine
 LifeEmu.py - UI
 RtspFrame.py - visualization
 
-start-life.sh  - run script for Lunux
-start-life.cmd - run script for Winows
-
 Run evolution process in society of monogamous species.
+
+	Windows
+	
+start-life.cmd   - run script for Windows
+start-life_c.cmd - run precompiled (cythonized) version, should be faster. Use '_c_build.sh' to build it
+'_c_build.bat'   - build precompiled (cythonized) version
+
+	Linux
+
+start-life.sh   - run script for Lunux
+start-life_c.sh - run precompiled (cythonized) version, should be faster. Use '_c_build.sh' to build it
+'_c_build.sh'   - build precompiled (cythonized) version
+
+	GUI World Settings
+
+iq0 - start new world with zero skills, if not set, world with random creatures would be created
+local res - allow creatures to get 1 point of energy from ts location unconditionally
+
+	In-source World Settings
+
+open World.py and change global options there, then run with 'start-life' or recompile with 
 
 	There are the following 'genes':
 
