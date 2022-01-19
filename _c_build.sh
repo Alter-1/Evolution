@@ -1,16 +1,17 @@
+#!/bin/sh
 #rem // _AT_ 220920 16:52 fresh VS with Python support required
 
 rm ./build.ok
 
-a=`pip show cython | grep Version 1>/dev/null`
-if [ "x$a" ] ; then
+a=`pip show cython | grep Version`
+if [ "x$a" == "x" ] ; then
   pip install cython
   pip install setuptools
 fi
 
-a=`pip show ttkthemes | grep Version 1>/dev/null`
-if [ "x$a" ] ; then
-  call preinstall.csh
+a=`pip show ttkthemes | grep Version`
+if [ "x$a" == "x"  ] ; then
+  . preinstall.csh
 fi
 
 python setup.py build_ext --inplace 
