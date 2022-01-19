@@ -1,8 +1,7 @@
 import tkinter as tk 
 
 import World
-from World import L
-from World import T
+from WorldConst import L, T
 
 import math
 

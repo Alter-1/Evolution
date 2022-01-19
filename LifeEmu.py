@@ -28,7 +28,7 @@ import re
 from shutil import *
 from functools import reduce
 import World
-from World import L
+from WorldConst import L, T
 
 PrintTextBox = None
 TextArea = None
