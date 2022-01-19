@@ -19,6 +19,7 @@ if is_windows:
 
 setup_list = [ \
     'World', \
+    'WorldConst', \
     'RtspFrame', \
     'ods', \
     'AsyncTTKQ', \
