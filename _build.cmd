@@ -5,8 +5,6 @@ if exist build.ok del build.ok
 pip show pyinstaller | findstr "Version" 1>nul
 if errorlevel 1 (  
   pip install pyinstaller
-) else (
-  goto :ok
 )
 
 echo build LifeEmu
