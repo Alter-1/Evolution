@@ -23,8 +23,9 @@ class L:
 
     pseudo_genes = 12 # marker
     color     = 12
+    myth      = 13
 
-    layers    = 13
+    layers    = 14
 
 LayerName = [
     "resources ",
@@ -43,6 +44,7 @@ LayerName = [
     "mobility  ",
     "fert      ",
     "color     ",
+    "myth      ",
                 
     "layers    "]
 
