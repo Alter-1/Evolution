@@ -614,6 +614,19 @@ def DoStage(StageF, x0, x1):
     global gMatrix, gW, gH, gEpoch
     global bStop
 
+    x = x0
+    while(x<x1):
+        y = 0
+        while(y<gH):
+            if(bStop):
+                return
+            StageF(x, y)
+            y+=1
+        #end while(y)
+        x+=1
+    #end while(x)
+
+    ''' It was bad idea
     if(gEpoch & 0x1):
         _x0 = x0
         _x1 = x1
@@ -650,6 +663,7 @@ def DoStage(StageF, x0, x1):
         print('DoStage ERR: '+ str(e) + " @"+str(x)+"x"+str(y))
         #print(str(x)+","+str(y))
         time.sleep(60)
+    '''
 
 #end DoStage()
 
