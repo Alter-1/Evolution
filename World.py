@@ -148,7 +148,9 @@ def CreatePerson(x, y):
         gMatrix[x, y, L.mobility  ] = random.randint(0,100)
     gMatrix[x, y, L.fert      ] = random.randint(0,100)
     # marker pseudo-gene
-    gMatrix[x, y, L.color] = makeColor(x,y)
+    color = makeColor(x,y)
+    gMatrix[x, y, L.color] = color
+    gMatrix[x, y, L.myth]  = color
 
     gPersons += 1
     gPersonsTotal += 1
@@ -186,6 +188,7 @@ def CreateChild(x, y, xm, ym, xf, yf):
     for layer in range(L.genes, L.pseudo_genes):
         gMatrix[x, y, layer     ] = CrossGenes(xm, ym, xf, yf, layer)
     gMatrix[x, y, L.color] = int(( gMatrix.item((xm, ym, L.color)) + gMatrix.item((xf, yf, L.color)) ) / 2)
+    gMatrix[x, y, L.myth]  = gMatrix.item((xf, yf, L.myth))
 
     exp = (0 + gMatrix.item((xf, yf, L.exp)) + gMatrix.item((xm, ym, L.exp))) * gMatrix.item((x, y, L.iq)) / 200
     if(exp > 100):
@@ -1030,6 +1033,13 @@ def UnpackWorld(o):
                     for y in range(gH):
                         if( gMatrix.item((x,y, L.ctype)) == T.person):
                             gMatrix[x, y, L.color] = makeColor(x,y)
+
+            if(layers <= L.myth):
+                for x in range(gW):
+                    for y in range(gH):
+                        if( gMatrix.item((x,y, L.ctype)) == T.person):
+                            gMatrix[x, y, L.myth] = makeColor(x,y)
+
 
         #gMatrix[:]      = o.gMatrix
         #gMatrix         = np.copy(o.gMatrix)
