@@ -88,9 +88,17 @@ def onclick(e):
     return(gX,gY)
 #end onclick()
 
+gOpenSaveDir = "."
+gOpenSaveName = "Earth.lsworld"
+
 def Save():
+    global gOpenSaveDir, gOpenSaveName
     try:
-        fn = asksaveasfilename(initialdir="./", initialfile="Earth.lsworld", title="Ssave the World", filetypes=(("Life simulator world", "*.lsworld"),))
+        fn = asksaveasfilename(initialdir=gOpenSaveDir+"/", initialfile=gOpenSaveName, title="Save the World", filetypes=(("Life simulator world", "*.lsworld"),))
+        if(not fn):
+            return
+        gOpenSaveDir = path.dirname(fn)
+        gOpenSaveName = path.basename(fn)
         World.Save(fn)
     except Exception as e:
         print('ERR: '+ str(e))
@@ -98,8 +106,13 @@ def Save():
 #end Save()
          
 def Load():
+    global gOpenSaveDir, gOpenSaveName
     try:
-        fn = askopenfilename(initialdir="./", title="Select World", filetypes=(("Life simulator world", "*.lsworld"),))
+        fn = askopenfilename(initialdir=gOpenSaveDir+"/", title="Select World", filetypes=(("Life simulator world", "*.lsworld"),))
+        if(not fn):
+            return
+        gOpenSaveDir = path.dirname(fn)
+        gOpenSaveName = path.basename(fn)
         World.Load(fn)
 
         chkZIQ_var.set( World.gIQ0          )
