@@ -117,7 +117,7 @@ class VideoCaptureDaemon(threading.Thread):
         self.h = h
         self.data = np.zeros((self.w*2, self.h*2, 3), dtype=np.uint8)
         #self.data[0:256, 0:256] = [255, 0, 0] # red patch in upper left
-        World.CreateMatrix(w, h, 4500)
+        #World.CreateMatrix(w, h, 4500)
 
         self.daemon = SimThread()
         #self.daemon.start()

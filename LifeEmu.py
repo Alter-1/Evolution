@@ -40,6 +40,10 @@ vMode = 0
 chkZIQ_var  = None
 chkLres_var = None
 
+w = 300
+h = 300
+N = 2500
+
 def printX(myStr):
     print(myStr)
 
@@ -126,6 +130,7 @@ def Load():
 
 def New():
     #global gW, gH
+    global w, h, N
     bLocked = False
     try:
         print('Lock')
@@ -138,7 +143,8 @@ def New():
         World.gIQ0           = (chkZIQ_var.get() == 1)
         World.gAllowLocalRes = (chkLres_var.get() == 1)
 
-        World.CreateMatrix(World.gW, World.gH, 2500)
+        #World.CreateMatrix(World.gW, World.gH, 2500)
+        World.CreateMatrix(w, h, N)
     except Exception as e:
         print('ERR: '+ str(e))
 
@@ -171,7 +177,8 @@ if __name__ == "__main__" :
     PrintTextBox = mtTextArea.PrintTextBox
 #--------------------------------------------- Video Frame -------------------------------------------------------------
 
-    video = VideoStreamWindow(gui, 300, 300)
+    video = VideoStreamWindow(gui, w, h)
+    World.CreateMatrix(w, h, N)
 
 #--------------------------------------------- Buttons  -------------------------------------------------------------
 
