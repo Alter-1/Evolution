@@ -18,6 +18,7 @@ gMaxIQres = 2           # maximum possible extra resources with 100% IQ
 gAttSz = 10             # look for partner and/or free spae or energy source in this range
 gAttChildSz = 2         # children look up for adults in this range
 gChildAge = 10          # before this age children require extra energy from parents and cannot create own ones
+                        #   effective child age is increased by iq, up to 4 points
 gBirthEnergy = 4
 gFailedBirthEnergy = 0
 gMaxNeibghors = 6       # don't create children when number of neibghors reaches this limit and look for free space if possible
@@ -30,7 +31,7 @@ gMutationFactor = 3     # for gMutationTypeV 0 use 1/N of distance between min/m
 gMutationMinStep = 30   # not less than N points around parents min/max, for gMutationTypeV 1 and 2
 gMutationTypeV = 2      # 2=natural
 gMaxDamage = 1          # max possible amount of energy which can be aggressively taken from other person
-gMaxGroundRes   = 2     # how many resources try to fetch from free area
+gMaxGroundRes   = 2     # how many resources try to fetch from free area by default
 gResRespawn     = 2     # max ground resource respawn
 
 gParallel = 2
@@ -967,6 +968,7 @@ def PackWorld():
 
     o.version = 1
     o.L = L()
+    o.Tunable = GetTunableNames()
     #o.gMatrix         = np.copy(gMatrix)
     o.gMatrix         = gMatrix
     o.gMaxAge         = gMaxAge
@@ -1109,6 +1111,29 @@ def UnpackWorld(o):
     return True
 #end UnpackWorld()
 
+def GetTunableNames():
+    return {
+        "MaxAge"        : ["Maximum possible age", 100],
+        "DiscoveryRate" : ["Discovery rate (extra energy), %",    30],
+        "MaxIQres"      : ["Max resource benefit of high IQ", 2],
+        "AttSz"         : ["Visibility/movement distance for adults", 10],
+        "AttChildSz"    : ["Visibility/movement distance for children", 2],
+        "ChildAge"      : ["Puberty age", 10],
+        "BirthEnergy"   : ["Birth cost (energy/resource points)", 4 ],  
+        "FailedBirthEnergy": ["Failed birth cost (no free place around)", 0 ],  
+        "MaxNeibghors"  : ["Max. neibghors, try to move away when reached", 6],
+        "AllowLocalRes" : ["Allow resource extraction from own cell, not only from free", False],
+        "MutationRate"  : ["Mutation rate, %",    1],
+        "MutationFactor": ["Mutation factor, max relative change",    3],
+        "MutationMinStep": ["Mutation min step",    30],
+        "MutationTypeV" : ["Mutation/inheritance model",    {0: "Progressive", 1:"Random", 2:"Natural"}],
+        "MaxDamage"     : ["Max damage",    1],
+        "MaxGroundRes"  : ["Default resource consumption",    2],
+        "ResRespawn"    : ["Resource respawn factor (energy points)",    2],
+#        "Parallel"      : ["Max parallel processes",    2],
+        }
+#end GetTunableNames
+        
 def Save(fn):
     with open(fn, 'wb') as fh:
         o = PackWorld()

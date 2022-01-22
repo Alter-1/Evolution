@@ -29,6 +29,7 @@ from shutil import *
 from functools import reduce
 import World
 from WorldConst import L, T
+from WorldOptions import *
 
 PrintTextBox = None
 TextArea = None
@@ -71,7 +72,15 @@ def SetMode(mode):
     vMode = mode
 #end SetMode()
 
-def UpdateOnFrameChange(videoStream):
+def SetOptions():
+    global gui
+    o = World.PackWorld()
+    r = WorldOptions.Show(gui, o)
+    if(r):
+        World.UnpackWorld(o)
+#end SetOptions()
+
+def UpdateOnFrameChange():
     global lbEpoch, lbVis, vMode
 
     lbEpoch.config(text=str(World.gEpoch))
@@ -79,8 +88,6 @@ def UpdateOnFrameChange(videoStream):
     #printX("Epoch:"+str(World.gEpoch))
     lbVis.config(text=World.LayerName[vMode])
     lbVis.update()
-
-    return videoStream    
 #end UpdateOnFrameChange()
 
 def onclick(e):
@@ -213,18 +220,20 @@ if __name__ == "__main__" :
     chkZIQ  = ttk.Checkbutton(commonframe, text = "0-IQ",      variable=chkZIQ_var ).grid(column = 1, row = 3,sticky=W, padx=8, pady=5)
     chkLres = ttk.Checkbutton(commonframe, text = "Local res", variable=chkLres_var).grid(column = 2, row = 3,sticky=W, padx=8, pady=5)
 
-    btNew   = ttk.Button(commonframe, text = "New",   command = New ).grid(column = 3, row = 3,sticky=W, padx=8, pady=5)
+    btOpt   = ttk.Button(commonframe, text = "Options",command= SetOptions ).grid(column = 3, row = 3,sticky=W, padx=8, pady=5)
+    btNew   = ttk.Button(commonframe, text = "New",   command = New        ).grid(column = 4, row = 3,sticky=W, padx=8, pady=5)
 
-    btSave  = ttk.Button(commonframe, text = "Save",  command = Save).grid(column = 1, row = 4,sticky=W, padx=8, pady=5)
-    btLoad  = ttk.Button(commonframe, text = "Load",  command = Load).grid(column = 2, row = 4,sticky=W, padx=8, pady=5)
+    btSave  = ttk.Button(commonframe, text = "Save",  command = Save       ).grid(column = 1, row = 4,sticky=W, padx=8, pady=5)
+    btLoad  = ttk.Button(commonframe, text = "Load",  command = Load       ).grid(column = 2, row = 4,sticky=W, padx=8, pady=5)
 
      # start textbox and progress bar message queues
     mtTextArea.periodicCall()
 
-    video.SetPostProcessing(UpdateOnFrameChange)
+    video.SetUpdateUI(UpdateOnFrameChange)
     video.Start()
 
     gui.mainloop() 
+    print("end of gui.mainloop()")
     try:
         video.Stop()
     except:

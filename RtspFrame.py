@@ -48,14 +48,23 @@ class VideoStreamWindow():
     def SetPostProcessing(self, f):
         self.daemon.PostProcessing = f
 
+    def SetUpdateUI(self, f):
+        self.UpdateUI = f
+
     def update_image(self):    
         # Get the latest frame and convert image format
         global errCnt
         try:
             #img = self.res_queue.get(block=True, timeout=timeout)
-            img = self.res_queue.get(block=False)
+            OGimage = self.res_queue.get(block=False)
+            img = ImageTk.PhotoImage(OGimage) # to ImageTk format
             self.cur_image = img
             self.hImage = self.canvas.create_image(0, 0, anchor=tk.NW, image=img)
+            try:
+                if(not (self.UpdateUI == None)):
+                    self.UpdateUI()
+            except Exception as e:
+                print('ERR UpdateUI: '+ str(e))
         except:
             #print('cv2.VideoCapture: could not grab input ({}). Timeout occurred after {:.2f}s'.format(video, timeout)) 
             if(errCnt % 1000) == 0:       
@@ -237,7 +246,7 @@ class VideoCaptureDaemon(threading.Thread):
                             resultImg = self.PostProcessing(self.OGimage)
                             self.OGimage = Image.fromarray(resultImg)
                         except Exception as e:
-                            print('ERR: '+ str(e))
+                            print('ERR PostProc: '+ str(e))
                             self.OGimage = Image.fromarray(self.OGimage) # to PIL format
                     else:
                         self.OGimage = Image.fromarray(self.OGimage) # to PIL format
@@ -245,9 +254,9 @@ class VideoCaptureDaemon(threading.Thread):
                     #self.image = self.OGimage.resize((300, 250), Image.ANTIALIAS)
                     
                     #self.image = Image.fromarray(self.OGimage)
-                    self.image = ImageTk.PhotoImage(self.OGimage) # to ImageTk format
-                    
-                    self.result_queue.put(self.image)
+                    #self.result_queue.put(self.image)
+                    self.result_queue.put(self.OGimage)
+
                 else:
                     #print("Skip frame")
                     pass
