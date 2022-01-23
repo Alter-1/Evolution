@@ -3,10 +3,13 @@ from tkinter import *
 from tkinter import ttk
 #from tkinter as tk
 from ttkthemes import ThemedTk
+from DlgBase import *
 
-class WorldOptions(object):
+class WorldOptions(DlgBase):
     def __init__(self, parent, o):
+        DlgBase.__init__(self, parent, o, 'World global options')
         #parent.wm_attributes("-disabled", True)
+        '''
         self.parent = parent
         self.World = o
 
@@ -32,9 +35,12 @@ class WorldOptions(object):
         commonframe = self.root_label = LabelFrame(root, text='World global options')
         commonframe.grid(column = 0, row = 0)
         commonframe.configure(background='black',foreground='green')
-
-        row = 1
         varlist = self.varlist = dict()
+        '''
+        commonframe = self.root_label
+        row = 1
+        varlist = self.varlist
+
         for name in o.Tunable:
             v = getattr(o, "g"+name)
             title, defv = o.Tunable[name]
@@ -61,6 +67,7 @@ class WorldOptions(object):
         self.btAgg   = ttk.Button(commonframe, text = "Cancel", command = self.Cancel).grid( column = 1, row = row,sticky=W, padx=8, pady=5)
         self.btReset = ttk.Button(commonframe, text = "Reset",  command = self.Reset ).grid( column = 2, row = row,sticky=W, padx=8, pady=5)
 
+        '''
         # This is watching the window manager close button
         # and uses the same callback function as the other buttons
         # (you can use which ever you want, BUT REMEMBER TO ENABLE
@@ -70,6 +77,7 @@ class WorldOptions(object):
         # a trick to activate the window (on windows 7)
         root.deiconify()
         print("init done");
+        '''
 
     def Apply(self, event=None):
         print("Apply");
@@ -94,13 +102,13 @@ class WorldOptions(object):
 
         self.returning = True
         self.root.quit()
-
+    '''
     def Cancel(self, event=None):
         print("Cancel");
         #self.returning = self.b2_return
         self.returning = False
         self.root.quit()
-
+    '''
     def Reset(self, event=None):
         print("Reset");
 
@@ -118,21 +126,25 @@ class WorldOptions(object):
                 x_var.set(str(v))
         #end for(o.Tunable)
 
-
+    '''
     def Close_Toplevel(self):
 
         print("Close_Toplevel");
         # a trick to activate the window (on windows 7)
         self.root.deiconify()
         self.returning = False
+    '''
 
     def Show(parent, o):
         dlg = WorldOptions(parent, o)
+        dlg._Show()
+        '''
         print("start root.mainloop()");
         dlg.root.mainloop()
         print("end root.mainloop()");
         dlg.root.destroy()
         return dlg.returning
+        '''
 
 #end class WorldOptions
 
