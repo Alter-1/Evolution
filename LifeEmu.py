@@ -30,6 +30,7 @@ from functools import reduce
 import World
 from WorldConst import L, T
 from WorldOptions import *
+from WorldInit import *
 
 PrintTextBox = None
 TextArea = None
@@ -38,8 +39,8 @@ lbEpoch = None
 lbVis = None
 vMode = 0
 
-chkZIQ_var  = None
-chkLres_var = None
+#chkZIQ_var  = None
+#chkLres_var = None
 
 w = 300
 h = 300
@@ -126,9 +127,9 @@ def Load():
         gOpenSaveName = path.basename(fn)
         World.Load(fn)
 
-        chkZIQ_var.set( World.gIQ0          )
-        chkLres_var.set(World.gAllowLocalRes)
-        print("IQ0="+str(World.gIQ0)+" LocalRes="+str(World.gAllowLocalRes))
+        #chkZIQ_var.set( World.gIQ0          )
+        #chkLres_var.set(World.gAllowLocalRes)
+        #print("IQ0="+str(World.gIQ0)+" LocalRes="+str(World.gAllowLocalRes))
 
     except Exception as e:
         print('ERR: '+ str(e))
@@ -140,6 +141,14 @@ def New():
     global w, h, N
     bLocked = False
     try:
+
+        o = World.GetInitOptions()
+        r = WorldInit.Show(gui, o)
+        if(not r):
+            return
+        World.SetInitOptions(o)
+        N = o.N
+
         print('Lock')
         World.WLockWait()
         bLocked = True
@@ -147,8 +156,9 @@ def New():
         World.Stop()
         print('Init')
 
-        World.gIQ0           = (chkZIQ_var.get() == 1)
-        World.gAllowLocalRes = (chkLres_var.get() == 1)
+        #World.gIQ0           = (chkZIQ_var.get() == 1)
+        #World.gAllowLocalRes = (chkLres_var.get() == 1)
+
 
         #World.CreateMatrix(World.gW, World.gH, 2500)
         World.CreateMatrix(w, h, N)
@@ -214,11 +224,11 @@ if __name__ == "__main__" :
     btMob   = ttk.Button(commonframe, text = "Mob",   command = lambda: SetMode(L.mobility  )).grid( column = 5, row = 2,sticky=W, padx=8, pady=5)
     btFert  = ttk.Button(commonframe, text = "Fert",  command = lambda: SetMode(L.fert      )).grid( column = 6, row = 2,sticky=W, padx=8, pady=5)
 
-    chkZIQ_var  = tk.IntVar(commonframe, int(World.gIQ0          ))
-    chkLres_var = tk.IntVar(commonframe, int(World.gAllowLocalRes))
+    #chkZIQ_var  = tk.IntVar(commonframe, int(World.gIQ0          ))
+    #chkLres_var = tk.IntVar(commonframe, int(World.gAllowLocalRes))
 
-    chkZIQ  = ttk.Checkbutton(commonframe, text = "0-IQ",      variable=chkZIQ_var ).grid(column = 1, row = 3,sticky=W, padx=8, pady=5)
-    chkLres = ttk.Checkbutton(commonframe, text = "Local res", variable=chkLres_var).grid(column = 2, row = 3,sticky=W, padx=8, pady=5)
+    #chkZIQ  = ttk.Checkbutton(commonframe, text = "0-IQ",      variable=chkZIQ_var ).grid(column = 1, row = 3,sticky=W, padx=8, pady=5)
+    #chkLres = ttk.Checkbutton(commonframe, text = "Local res", variable=chkLres_var).grid(column = 2, row = 3,sticky=W, padx=8, pady=5)
 
     btOpt   = ttk.Button(commonframe, text = "Options",command= SetOptions ).grid(column = 3, row = 3,sticky=W, padx=8, pady=5)
     btNew   = ttk.Button(commonframe, text = "New",   command = New        ).grid(column = 4, row = 3,sticky=W, padx=8, pady=5)

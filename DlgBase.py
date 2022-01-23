@@ -45,13 +45,23 @@ class DlgBase(object):
         # a trick to activate the window (on windows 7)
         root.deiconify()
         print("init done");
+    #end __init__()
 
     def Cancel(self, event=None):
         print("Cancel");
         #self.returning = self.b2_return
         self.returning = False
         self.root.quit()
+    #end Cancel()
 
+    def AddInput(self, v, x, y):
+        commonframe = self.root_label
+        txtv = str(v)
+        x_var = tk.StringVar(commonframe, txtv)
+        txt = tk.Entry(commonframe, textvariable=x_var, width=5).grid(column = x, row = y,sticky=W, padx=8, pady=5)
+        x_var.set(txtv)
+        return x_var
+    #end AddInput()
 
     def Close_Toplevel(self):
 
@@ -59,6 +69,7 @@ class DlgBase(object):
         # a trick to activate the window (on windows 7)
         self.root.deiconify()
         self.returning = False
+    #end Close_Toplevel()
 
     def _Show(self):
         print("start root.mainloop()");
@@ -66,6 +77,7 @@ class DlgBase(object):
         print("end root.mainloop()");
         self.root.destroy()
         return self.returning
+    #end _Show()
 
 #end class DlgBase
 

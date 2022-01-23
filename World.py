@@ -50,6 +50,9 @@ gPersonsTotal=0
 bStop = False
 gWorldLock = threading.Lock()
 
+gInitOptions = Empty()
+gInitOptions.N = 2500
+
 nLockCounter = 0
 
 def WLock():
@@ -128,13 +131,15 @@ def makeColor(x,y):
 
 def CreatePerson(x, y):
     global gMatrix, gPersons, gPersonsTotal, gH, gW
-    global gIQ0
+    global gInitOptions
+    #global gIQ0
     gMatrix[x, y, L.ctype ] = T.person
     gMatrix[x, y, L.energy] = random.randint(30,100)
     gMatrix[x, y, L.age   ] = 16
     gMatrix[x, y, L.sex   ] = random.randint(0,1)
     gMatrix[x, y, L.exp   ] = 0
 
+    '''
     if(gIQ0):
         gMatrix[x, y, L.share     ] = random.randint(0,100)
         gMatrix[x, y, L.aggressive] = 0
@@ -148,6 +153,19 @@ def CreatePerson(x, y):
         gMatrix[x, y, L.defence   ] = random.randint(0,100)
         gMatrix[x, y, L.mobility  ] = random.randint(0,100)
     gMatrix[x, y, L.fert      ] = random.randint(0,100)
+    '''
+    for i in range(L.genes, L.pseudo_genes):
+        name = LayerName[i]
+        try:
+            desc = getattr(gInitOptions, name)
+            a, b = desc
+        except:
+            a = 0
+            b = 100
+        #end try
+        gMatrix[x, y, i  ] = random.randint(a,b)
+    #end for()
+
     # marker pseudo-gene
     color = makeColor(x,y)
     gMatrix[x, y, L.color] = color
@@ -1133,6 +1151,16 @@ def GetTunableNames():
 #        "Parallel"      : ["Max parallel processes",    2],
         }
 #end GetTunableNames
+
+def GetInitOptions():
+    global gInitOptions
+    return gInitOptions
+#end GetInitOptions()
+
+def SetInitOptions(o):
+    global gInitOptions
+    gInitOptions = o
+#end SetInitOptions()
         
 def Save(fn):
     with open(fn, 'wb') as fh:
