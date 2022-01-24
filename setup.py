@@ -20,6 +20,9 @@ if is_windows:
 setup_list = [ \
     'World', \
     'WorldConst', \
+    'WorldOptions', \
+    'WorldInit', \
+    'DlgBase', \
     'RtspFrame', \
     'ods', \
     'AsyncTTKQ', \
