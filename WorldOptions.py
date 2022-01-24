@@ -137,7 +137,7 @@ class WorldOptions(DlgBase):
 
     def Show(parent, o):
         dlg = WorldOptions(parent, o)
-        dlg._Show()
+        return dlg._Show()
         '''
         print("start root.mainloop()");
         dlg.root.mainloop()
