@@ -31,6 +31,7 @@ import World
 from WorldConst import L, T
 from WorldOptions import *
 from WorldInit import *
+from PointInfoDlg import *
 
 PrintTextBox = None
 TextArea = None
@@ -91,13 +92,34 @@ def UpdateOnFrameChange():
     lbVis.update()
 #end UpdateOnFrameChange()
 
-def onclick(e):
-    global gX, gY, gXRayImg, XRimage, ghImage
-    gX=e.x
-    gY=e.y
-    print("Cooordinates %d %d"%(gX,gY))
+gPointInfoDlg = None
 
-    return(gX,gY)
+def onclick(e):
+    global video, gPointInfoDlg
+    global gui
+    # array 0 index is row
+    # array 1 index is column
+    # array 2 index is layer
+    X=int(e.y/2)
+    Y=int(e.x/2)
+    print("Cooordinates %d %d"%(X,Y))
+
+    if(gPointInfoDlg == None):
+        print("new dlg")
+        gPointInfoDlg = PointInfoDlg(gui)
+        gPointInfoDlg.onClick(World.gMatrix[X, Y])
+        gPointInfoDlg.root.grab_release()
+        gPointInfoDlg._Show()
+        gPointInfoDlg = None
+        return
+
+    try:
+        print("update dlg")
+        gPointInfoDlg.onClick(World.gMatrix[X, Y])
+    except Exception as e:
+        print('ERR onclick: '+ str(e))
+
+    return(X,Y)
 #end onclick()
 
 gOpenSaveDir = "."
@@ -138,6 +160,7 @@ def Load():
 
 def New():
     #global gW, gH
+    global gui
     global w, h, N
     bLocked = False
     try:
@@ -195,6 +218,7 @@ if __name__ == "__main__" :
 #--------------------------------------------- Video Frame -------------------------------------------------------------
 
     video = VideoStreamWindow(gui, w, h)
+    video.canvas.bind("<Button 1>",onclick)
     World.CreateMatrix(w, h, N)
 
 #--------------------------------------------- Buttons  -------------------------------------------------------------

@@ -22,6 +22,7 @@ setup_list = [ \
     'WorldConst', \
     'WorldOptions', \
     'WorldInit', \
+    'PointInfoDlg', \
     'DlgBase', \
     'RtspFrame', \
     'ods', \

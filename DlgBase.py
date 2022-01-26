@@ -22,6 +22,7 @@ class DlgBase(object):
 
         root.minsize(300, 100)
         root.resizable(False, False)
+        root.wait_visibility()
         root.grab_set() # modal
 
         # Tell the window manager, this is the child widget.
